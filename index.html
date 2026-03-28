@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SpendSense — Smart Expense Tracker</title>
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ===== HEADER ===== -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">💸</div>
+      <h1>Spend<span>Sense</span></h1>
+    </div>
+    <div class="header-controls">
+      <div class="savage-toggle" id="savageToggle" onclick="toggleSavage()">
+        <div class="toggle-dot"></div>
+        <span id="savageLabel">Savage Mode</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== DASHBOARD STATS ===== -->
+  <div class="dashboard-grid">
+    <div class="stat-card">
+      <div class="stat-icon">📅</div>
+      <div class="stat-label">This Week</div>
+      <div class="stat-value" id="weeklyTotal">₹0</div>
+      <div class="stat-delta" id="weeklyDelta">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🗓</div>
+      <div class="stat-label">This Month</div>
+      <div class="stat-value" id="monthlyTotal">₹0</div>
+      <div class="stat-delta" id="monthlyDelta">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🏆</div>
+      <div class="stat-label">Top Category</div>
+      <div class="stat-value" id="topCat" style="font-size:16px;line-height:1.4">—</div>
+      <div class="stat-delta" id="topCatAmount">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🧾</div>
+      <div class="stat-label">Total Entries</div>
+      <div class="stat-value" id="totalCount">0</div>
+      <div class="stat-delta" id="todaySpend">Today: ₹0</div>
+    </div>
+  </div>
+
+  <!-- ===== BUDGET BAR ===== -->
+  <div class="budget-card">
+    <div class="budget-header">
+      <span class="budget-title">Monthly Budget</span>
+      <span class="budget-pct" id="budgetPct">—</span>
+    </div>
+    <div class="budget-track">
+      <div class="budget-fill" id="budgetFill" style="width:0%"></div>
+    </div>
+    <div class="budget-warning" id="budgetWarning"></div>
+  </div>
+
+  <!-- ===== INSIGHTS STRIP ===== -->
+  <div class="insights-strip" id="insightsStrip">
+    <div class="insight-chip">💡 Add expenses to see insights</div>
+  </div>
+
+  <!-- ===== MAIN CONTENT GRID ===== -->
+  <div class="content-grid">
+
+    <!-- Charts Column -->
+    <div class="charts-section">
+      <div class="chart-card">
+        <div class="chart-title">📊 Daily Spending — Last 7 Days</div>
+        <canvas id="barChart"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">🥧 Category Split</div>
+        <canvas id="pieChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Add Expense + Budget Settings Column -->
+    <div style="display:flex;flex-direction:column;gap:16px;">
+
+      <div class="add-panel">
+        <div class="panel-title">➕ Add Expense</div>
+
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <input type="text" id="expName" placeholder="e.g. Chicken biryani" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Amount (₹)</label>
+          <div class="amount-row">
+            <div class="currency-symbol">₹</div>
+            <input type="number" id="expAmount" placeholder="0.00" min="0" step="0.01" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Category</label>
+          <select id="expCategory">
+            <option value="Food">🍔 Food & Dining</option>
+            <option value="Transport">🚗 Transport</option>
+            <option value="Shopping">🛍 Shopping</option>
+            <option value="Entertainment">🎬 Entertainment</option>
+            <option value="Health">💊 Health</option>
+            <option value="Bills">💡 Bills & Utilities</option>
+            <option value="Education">📚 Education</option>
+            <option value="Travel">✈️ Travel</option>
+            <option value="Random">🎲 Random</option>
+            <option value="Other">📌 Other</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input type="date" id="expDate" />
+        </div>
+
+        <button class="btn btn-primary" onclick="addExpense()">Add Expense</button>
+      </div>
+
+      <div class="add-panel">
+        <div class="panel-title">⚙️ Budget Settings</div>
+        <div class="budget-inputs">
+          <div class="form-group">
+            <label class="form-label">Monthly (₹)</label>
+            <input type="number" id="monthlyBudget" placeholder="20000" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Weekly (₹)</label>
+            <input type="number" id="weeklyBudget" placeholder="5000" />
+          </div>
+        </div>
+        <button class="btn btn-ghost" onclick="saveBudget()">Save Budget</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ===== EXPENSE LIST ===== -->
+  <div class="expense-section">
+    <div class="expense-header">
+      <span class="expense-title">📋 All Expenses</span>
+      <div class="expense-controls">
+        <input type="text" class="search-input" id="searchInput" placeholder="Search..." oninput="renderList()" />
+        <select class="filter-select" id="filterCat" onchange="renderList()">
+          <option value="">All Categories</option>
+          <option value="Food">🍔 Food</option>
+          <option value="Transport">🚗 Transport</option>
+          <option value="Shopping">🛍 Shopping</option>
+          <option value="Entertainment">🎬 Entertainment</option>
+          <option value="Health">💊 Health</option>
+          <option value="Bills">💡 Bills</option>
+          <option value="Education">📚 Education</option>
+          <option value="Travel">✈️ Travel</option>
+          <option value="Random">🎲 Random</option>
+          <option value="Other">📌 Other</option>
+        </select>
+        <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px;" onclick="exportCSV()">Export CSV</button>
+      </div>
+    </div>
+    <div class="expense-list" id="expenseList">
+      <div class="empty-state">
+        <div class="empty-icon">🪙</div>
+        <p>No expenses yet. Add one above.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== BOTTOM BAR ===== -->
+  <div class="bottom-bar">
+    <button class="btn btn-ghost" style="font-size:12px;color:var(--red);" onclick="clearAll()">🗑 Clear All Data</button>
+  </div>
+
+</div>
+
+<!-- ===== TOAST CONTAINER ===== -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ===== SCRIPTS ===== -->
+<script src="utils/storage.js"></script>
+<script src="utils/calculations.js"></script>
+<script src="components/dashboard.js"></script>
+<script src="components/expenseList.js"></script>
+<script src="components/charts.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
