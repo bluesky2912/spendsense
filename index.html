@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#080810" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>SpendSense — AI-Powered</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div class="noise"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="app">
+
+    <!-- ══ HEADER ══ -->
+    <header class="header">
+      <div class="logo">
+        <div class="logo-mark">
+          <span>💸</span>
+          <div class="logo-pulse"></div>
+        </div>
+        <div class="logo-text">
+          <h1>Spend<em>Sense</em> <span class="ai-label">AI</span></h1>
+          <p class="logo-sub">your money, unfiltered</p>
+        </div>
+      </div>
+      <div class="header-right">
+        <button class="theme-btn" onclick="toggleTheme()">☀️ <span id="themeLabel">Light</span></button>
+        <button class="theme-btn" onclick="showShortcuts()" title="Keyboard shortcuts">⌨️</button>
+        <div class="streak-badge" id="streakBadge" title="Tracking streak">
+          <span class="streak-fire">🔥</span>
+          <span class="streak-count" id="streakCount">0</span>
+          <span class="streak-label">day streak</span>
+        </div>
+        <button class="savage-toggle" id="savageToggle" onclick="toggleSavage()" aria-label="Toggle Savage Mode">
+          <div class="savage-inner">
+            <span class="savage-emoji">😇</span>
+            <span class="savage-text">Savage</span>
+            <div class="savage-track"><div class="savage-thumb"></div></div>
+          </div>
+        </button>
+      </div>
+    </header>
+
+    <!-- ══ NAV TABS ══ -->
+    <nav class="nav-tabs">
+      <button class="nav-tab active" onclick="switchTab('dashboard', this)"><span>📊</span> Dashboard</button>
+      <button class="nav-tab" onclick="switchTab('ai', this)"><span>🧠</span> AI Coach</button>
+      <button class="nav-tab" onclick="switchTab('analytics', this)"><span>📈</span> Analytics</button>
+      <button class="nav-tab" onclick="switchTab('goals', this)"><span>🎯</span> Goals</button>
+      <button class="nav-tab" onclick="switchTab('recurring', this)"><span>🔄</span> Recurring</button>
+    </nav>
+
+    <!-- ══════════════════════════════════════
+         TAB: DASHBOARD
+    ══════════════════════════════════════ -->
+    <div id="tab-dashboard">
+
+      <!-- HERO -->
+      <div class="hero-section">
+        <div class="hero-main">
+          <div class="hero-label">Total Spent This Month</div>
+          <div class="hero-amount" id="heroAmount">₹0</div>
+          <div class="hero-meta" id="heroMeta">Start adding expenses below</div>
+        </div>
+        <div class="hero-rings">
+          <svg class="ring-svg" viewBox="0 0 200 200">
+            <circle class="ring-bg"   cx="100" cy="100" r="85" />
+            <circle class="ring-fill" id="ringFill" cx="100" cy="100" r="85"
+              stroke-dasharray="534" stroke-dashoffset="534" />
+            <text class="ring-pct-text" id="ringPct" x="100" y="107" text-anchor="middle">0%</text>
+          </svg>
+          <div class="ring-label">of budget</div>
+        </div>
+      </div>
+
+      <!-- FORECAST BAR -->
+      <div class="forecast-bar" id="forecastBar" style="display:none">
+        <div class="forecast-icon">📡</div>
+        <div class="forecast-text" id="forecastText">Calculating forecast…</div>
+        <div class="forecast-value" id="forecastValue"></div>
+      </div>
+
+      <!-- ANOMALY ALERT -->
+      <div class="anomaly-alert" id="anomalyAlert">
+        <div class="anomaly-icon">⚠️</div>
+        <div id="anomalyText"></div>
+      </div>
+
+      <!-- STAT PILLS -->
+      <div class="stats-row">
+        <div class="stat-pill">
+          <div class="stat-pill-icon">📅</div>
+          <div class="stat-pill-body">
+            <div class="stat-pill-label">This Week</div>
+            <div class="stat-pill-value" id="weeklyTotal">₹0</div>
+            <div class="stat-pill-delta" id="weeklyDelta">—</div>
+          </div>
+        </div>
+        <div class="stat-pill">
+          <div class="stat-pill-icon" id="topCatIcon">🏆</div>
+          <div class="stat-pill-body">
+            <div class="stat-pill-label">Top Category</div>
+            <div class="stat-pill-value" id="topCat">—</div>
+            <div class="stat-pill-delta" id="topCatAmount">—</div>
+          </div>
+        </div>
+        <div class="stat-pill">
+          <div class="stat-pill-icon">⚡</div>
+          <div class="stat-pill-body">
+            <div class="stat-pill-label">Today</div>
+            <div class="stat-pill-value" id="todayTotal">₹0</div>
+            <div class="stat-pill-delta" id="totalCount">0 entries</div>
+          </div>
+        </div>
+        <div class="stat-pill">
+          <div class="stat-pill-icon">🎯</div>
+          <div class="stat-pill-body">
+            <div class="stat-pill-label">Budget Left</div>
+            <div class="stat-pill-value" id="budgetLeft">₹0</div>
+            <div class="stat-pill-delta" id="budgetLeftDelta">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INSIGHTS TICKER -->
+      <div class="insights-ticker">
+        <div class="ticker-label">💡 Insights</div>
+        <div class="ticker-track">
+          <div class="ticker-inner" id="tickerInner">
+            <span class="ticker-chip">Add expenses to unlock insights</span>
+            <span class="ticker-chip">Add expenses to unlock insights</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- MAIN GRID -->
+      <div class="main-grid">
+
+        <!-- ADD EXPENSE PANEL -->
+        <div class="panel add-panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Add Expense</h2>
+            <div class="panel-badge">➕</div>
+          </div>
+
+          <div class="cat-selector" id="catSelector">
+            <button class="cat-btn active" data-cat="Food"          onclick="selectCat(this)">🍔 Food</button>
+            <button class="cat-btn"        data-cat="Transport"     onclick="selectCat(this)">🚗 Transport</button>
+            <button class="cat-btn"        data-cat="Shopping"      onclick="selectCat(this)">🛍 Shopping</button>
+            <button class="cat-btn"        data-cat="Entertainment" onclick="selectCat(this)">🎬 Fun</button>
+            <button class="cat-btn"        data-cat="Health"        onclick="selectCat(this)">💊 Health</button>
+            <button class="cat-btn"        data-cat="Bills"         onclick="selectCat(this)">💡 Bills</button>
+            <button class="cat-btn"        data-cat="Education"     onclick="selectCat(this)">📚 Study</button>
+            <button class="cat-btn"        data-cat="Travel"        onclick="selectCat(this)">✈️ Travel</button>
+            <button class="cat-btn"        data-cat="Random"        onclick="selectCat(this)">🎲 Random</button>
+            <button class="cat-btn"        data-cat="Other"         onclick="selectCat(this)">📌 Other</button>
+          </div>
+          <input type="hidden" id="expCategory" value="Food" />
+
+          <div class="amount-big-row">
+            <span class="currency-big">₹</span>
+            <input type="number" id="expAmount" class="amount-big-input"
+              placeholder="0" min="0.01" step="0.01" inputmode="decimal" />
+          </div>
+
+          <div class="form-row">
+            <div class="form-field">
+              <label class="field-label" for="expName">Description</label>
+              <input type="text" id="expName" class="field-input"
+                placeholder="What'd you spend on?" maxlength="80" autocomplete="off"
+                oninput="autoDetectCategory(this.value)" />
+            </div>
+            <div class="form-field form-field-sm">
+              <label class="field-label" for="expDate">Date</label>
+              <input type="date" id="expDate" class="field-input" />
+            </div>
+          </div>
+          <div class="auto-detect-hint" id="autoDetectHint"></div>
+
+          <div class="split-row">
+            <span class="split-label">🔀 Split expense (shared)</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="splitToggle" onchange="toggleSplit()" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div id="splitWith" style="display:none; margin-bottom:12px">
+            <input type="text" class="field-input" id="splitPerson"
+              placeholder="Split with (name)" style="font-size:14px" />
+          </div>
+
+          <div class="recur-row">
+            <span class="split-label">🔄 Recurring</span>
+            <label class="toggle-switch">
+              <input type="checkbox" id="recurToggle" onchange="toggleRecur()" />
+              <span class="toggle-slider"></span>
+            </label>
+            <select class="field-input recur-select" id="recurFreq">
+              <option value="monthly">Monthly</option>
+              <option value="weekly">Weekly</option>
+            </select>
+          </div>
+
+          <button class="add-btn" onclick="addExpense()">
+            <span class="add-btn-text">Add Expense</span>
+            <span class="add-btn-icon">→</span>
+          </button>
+        </div>
+
+        <!-- CHARTS PANEL -->
+        <div class="panel charts-panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Charts</h2>
+            <div class="chart-tabs">
+              <button class="chart-tab active" onclick="switchChart('bar', this)">7 Days</button>
+              <button class="chart-tab" onclick="switchChart('pie', this)">Categories</button>
+              <button class="chart-tab" onclick="switchChart('trend', this)">Trends</button>
+            </div>
+          </div>
+          <div class="chart-wrap" id="chartBar"><canvas id="barChart"></canvas></div>
+          <div class="chart-wrap hidden" id="chartPie"><canvas id="pieChart"></canvas></div>
+          <div class="chart-wrap hidden" id="chartTrend"><canvas id="trendChart"></canvas></div>
+        </div>
+
+        <!-- BUDGET / RIGHT PANEL -->
+        <div class="panel right-panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Budget</h2>
+            <div class="panel-badge">⚙️</div>
+          </div>
+
+          <div class="budget-ring-row">
+            <div class="mini-budget">
+              <label class="field-label" for="monthlyBudget">Monthly (₹)</label>
+              <input type="number" id="monthlyBudget" class="field-input"
+                placeholder="20000" min="1" inputmode="numeric" />
+            </div>
+            <div class="mini-budget">
+              <label class="field-label" for="weeklyBudget">Weekly (₹)</label>
+              <input type="number" id="weeklyBudget" class="field-input"
+                placeholder="5000" min="1" inputmode="numeric" />
+            </div>
+          </div>
+          <button class="save-budget-btn" onclick="saveBudget()">Save Budget</button>
+
+          <div class="divider"></div>
+
+          <div class="heatmap-title">Last 30 Days Activity</div>
+          <div class="heatmap" id="heatmap"></div>
+
+          <div class="divider"></div>
+
+          <div class="danger-zone">
+            <button class="danger-btn"            onclick="exportCSV()">📤 CSV</button>
+            <button class="danger-btn"            onclick="importSMS()">📱 SMS</button>
+            <button class="danger-btn danger-red" onclick="clearAll()">🗑 Clear</button>
+          </div>
+        </div>
+
+      </div><!-- /main-grid -->
+
+      <!-- EXPENSE LIST -->
+      <div class="list-section">
+        <div class="list-header">
+          <h2 class="panel-title">All Expenses</h2>
+          <div class="list-controls">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="search" id="searchInput" class="search-input"
+                placeholder="Search…" oninput="renderList()" autocomplete="off" />
+            </div>
+            <select class="filter-select" id="filterCat" onchange="renderList()">
+              <option value="">All</option>
+              <option value="Food">🍔 Food</option>
+              <option value="Transport">🚗 Transport</option>
+              <option value="Shopping">🛍 Shopping</option>
+              <option value="Entertainment">🎬 Fun</option>
+              <option value="Health">💊 Health</option>
+              <option value="Bills">💡 Bills</option>
+              <option value="Education">📚 Education</option>
+              <option value="Travel">✈️ Travel</option>
+              <option value="Random">🎲 Random</option>
+              <option value="Other">📌 Other</option>
+            </select>
+            <select class="filter-select" id="sortBy" onchange="renderList()">
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="highest">Highest</option>
+              <option value="lowest">Lowest</option>
+            </select>
+            <button class="danger-btn" id="bulkModeBtn" onclick="toggleBulkMode()"
+              style="flex:0; padding:0 12px; height:var(--tap)">☑️</button>
+          </div>
+        </div>
+        <div class="bulk-bar" id="bulkBar">
+          <div class="bulk-info" id="bulkInfo">0 selected</div>
+          <button class="bulk-del-btn" onclick="bulkDelete()">🗑 Delete Selected</button>
+          <button class="danger-btn" onclick="cancelBulk()" style="flex:0; padding:0 12px">Cancel</button>
+        </div>
+        <div class="expense-list" id="expenseList">
+          <div class="empty-state">
+            <div class="empty-emoji">🪙</div>
+            <p>No expenses yet.<br />Add your first one above.</p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /tab-dashboard -->
+
+    <!-- ══════════════════════════════════════
+         TAB: AI COACH
+    ══════════════════════════════════════ -->
+    <div id="tab-ai" style="display:none">
+      <div class="ai-coach-panel">
+        <div class="ai-coach-header">
+          <span style="font-size:24px">🧠</span>
+          <div>
+            <div class="panel-title" style="font-size:17px">AI Spending Coach</div>
+            <div style="font-size:11px; color:var(--text2)">Powered by Claude — ask anything about your finances</div>
+          </div>
+          <div class="ai-badge">AI</div>
+        </div>
+        <div class="ai-quick-btns">
+          <button class="ai-quick-btn" onclick="askCoach('Where am I overspending?')">🔍 Where am I overspending?</button>
+          <button class="ai-quick-btn" onclick="askCoach('How can I save ₹5000 this month?')">💰 Save ₹5000 this month</button>
+          <button class="ai-quick-btn" onclick="askCoach('Give me a monthly spending review')">📋 Monthly review</button>
+          <button class="ai-quick-btn" onclick="askCoach('What are my worst spending habits?')">😬 Worst habits</button>
+          <button class="ai-quick-btn" onclick="askCoach('Am I on track with my budget?')">🎯 Budget check</button>
+          <button class="ai-quick-btn" onclick="askCoach('What category should I cut first?')">✂️ What to cut?</button>
+        </div>
+        <div class="ai-messages" id="aiMessages">
+          <div class="ai-msg coach" style="color:var(--text3); font-size:12px">
+            Hi! I'm your AI spending coach. Ask me anything about your expenses and I'll give you personalised insights.
+            Your data stays private — I only use it to answer your question.
+          </div>
+        </div>
+        <div class="ai-input-row">
+          <input type="text" class="ai-input" id="aiInput"
+            placeholder="Ask me anything about your spending…"
+            onkeydown="if(event.key==='Enter') sendCoach()" />
+          <button class="ai-send-btn" onclick="sendCoach()">→</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         TAB: ANALYTICS
+    ══════════════════════════════════════ -->
+    <div id="tab-analytics" style="display:none">
+      <div style="display:flex; flex-direction:column; gap:14px">
+
+        <!-- Month-over-Month -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Month-over-Month</h2>
+            <div class="panel-badge">📊</div>
+          </div>
+          <div class="mom-bars" id="momBars">
+            <div style="font-size:12px; color:var(--text2); text-align:center; padding:20px">
+              Add expenses across multiple months to see comparisons
+            </div>
+          </div>
+        </div>
+
+        <!-- Category Budgets -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Category Budgets</h2>
+            <div class="panel-badge">🎛️</div>
+          </div>
+          <div style="font-size:11px; color:var(--text2); margin-bottom:10px">Set limits per category</div>
+          <div id="catBudgetInputs" style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px"></div>
+          <button class="save-budget-btn" onclick="saveCatBudgets()">Save Category Limits</button>
+          <div class="cat-budget-list" id="catBudgetList"></div>
+        </div>
+
+        <!-- Monthly Report Card -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Monthly Report Card</h2>
+            <div class="panel-badge">📝</div>
+          </div>
+          <div id="reportCard">
+            <div style="font-size:12px; color:var(--text2); text-align:center; padding:20px">
+              Add expenses to generate your report card
+            </div>
+          </div>
+        </div>
+
+        <!-- No-Spend Challenge -->
+        <div class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">No-Spend Challenge</h2>
+            <div class="panel-badge">🏆</div>
+          </div>
+          <div class="challenge-card">
+            <div class="challenge-title">🌿 No-Spend Days This Month</div>
+            <div class="challenge-meta" id="challengeMeta">Track zero-spend days for bonus streaks!</div>
+            <div class="challenge-grid" id="challengeGrid"></div>
+          </div>
+          <div id="noSpendStreak" style="font-size:12px; color:var(--text2); margin-top:8px"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         TAB: GOALS
+    ══════════════════════════════════════ -->
+    <div id="tab-goals" style="display:none">
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Savings Goals</h2>
+          <div class="panel-badge">🎯</div>
+        </div>
+        <div class="goals-grid" id="goalsGrid">
+          <div style="font-size:12px; color:var(--text2); text-align:center; padding:20px">
+            No goals yet — add your first savings goal!
+          </div>
+        </div>
+        <button class="add-goal-btn" onclick="showGoalForm()">+ Add Savings Goal</button>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
+         TAB: RECURRING
+    ══════════════════════════════════════ -->
+    <div id="tab-recurring" style="display:none">
+      <div class="panel">
+        <div class="panel-header">
+          <h2 class="panel-title">Recurring Expenses</h2>
+          <div class="panel-badge">🔄</div>
+        </div>
+        <div style="font-size:12px; color:var(--text2); margin-bottom:12px">
+          These auto-add on their schedule. Delete to remove.
+        </div>
+        <div id="recurringList">
+          <div class="empty-state">
+            <div class="empty-emoji" style="font-size:36px">🔄</div>
+            <p style="font-size:13px">No recurring expenses.<br />Add one via the expense form.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /app -->
+
+  <!-- ══ QUICK ADD FLOAT BUTTON ══ -->
+  <div class="quick-add-float">
+    <div class="quick-pills" id="quickPills"></div>
+    <button class="quick-add-main" onclick="toggleQuickAdd()" id="quickAddBtn">+</button>
+  </div>
+
+  <!-- ══ MODALS ══ -->
+
+  <!-- Shortcuts Modal -->
+  <div class="modal-overlay" id="shortcutsModal" onclick="if(event.target===this) hideShortcuts()">
+    <div class="modal-box">
+      <div class="modal-title">
+        Keyboard Shortcuts
+        <button class="modal-close" onclick="hideShortcuts()">×</button>
+      </div>
+      <div class="shortcut-list">
+        <div class="shortcut-item"><span class="shortcut-desc">Add expense</span><div class="shortcut-key"><span class="kbd">Ctrl</span><span class="kbd">Enter</span></div></div>
+        <div class="shortcut-item"><span class="shortcut-desc">Focus description</span><div class="shortcut-key"><span class="kbd">Alt</span><span class="kbd">N</span></div></div>
+        <div class="shortcut-item"><span class="shortcut-desc">Focus amount</span><div class="shortcut-key"><span class="kbd">Alt</span><span class="kbd">A</span></div></div>
+        <div class="shortcut-item"><span class="shortcut-desc">Open AI Coach</span><div class="shortcut-key"><span class="kbd">Alt</span><span class="kbd">C</span></div></div>
+        <div class="shortcut-item"><span class="shortcut-desc">Dashboard tab</span><div class="shortcut-key"><span class="kbd">Alt</span><span class="kbd">1</span></div></div>
+        <div class="shortcut-item"><span class="shortcut-desc">Analytics tab</span><div class="shortcut-key"><span class="kbd">Alt</span><span class="kbd">3</span></div></div>
+        <div class="shortcut-item"><span class="shortcut-desc">Export CSV</span><div class="shortcut-key"><span class="kbd">Alt</span><span class="kbd">E</span></div></div>
+        <div class="shortcut-item"><span class="shortcut-desc">Toggle Savage Mode</span><div class="shortcut-key"><span class="kbd">Alt</span><span class="kbd">S</span></div></div>
+        <div class="shortcut-item"><span class="shortcut-desc">Show shortcuts</span><div class="shortcut-key"><span class="kbd">?</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Goal Modal -->
+  <div class="modal-overlay" id="goalModal" onclick="if(event.target===this) hideGoalModal()">
+    <div class="modal-box" style="max-width:400px">
+      <div class="modal-title">
+        New Savings Goal
+        <button class="modal-close" onclick="hideGoalModal()">×</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px">
+        <div><label class="field-label">Goal Name</label><input type="text" id="goalName" class="field-input" placeholder="e.g. Trip to Goa" /></div>
+        <div><label class="field-label">Target Amount (₹)</label><input type="number" id="goalTarget" class="field-input" placeholder="10000" /></div>
+        <div><label class="field-label">Current Saved (₹)</label><input type="number" id="goalSaved" class="field-input" placeholder="0" /></div>
+        <div><label class="field-label">Deadline</label><input type="date" id="goalDeadline" class="field-input" /></div>
+        <button class="add-btn" onclick="addGoal()"><span>Save Goal</span><span>🎯</span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SMS Import Modal -->
+  <div class="modal-overlay" id="smsModal" onclick="if(event.target===this) hideSMSModal()">
+    <div class="modal-box">
+      <div class="modal-title">
+        Import UPI / Bank SMS
+        <button class="modal-close" onclick="hideSMSModal()">×</button>
+      </div>
+      <div style="font-size:12px; color:var(--text2); margin-bottom:10px">
+        Paste your bank SMS messages below. We'll auto-detect amounts and merchants.
+      </div>
+      <textarea id="smsInput" class="field-input" style="height:150px; resize:vertical; font-size:13px"
+        placeholder="e.g. INR 299.00 debited from your account for payment to Swiggy. UPI ref: 123456789"></textarea>
+      <div style="margin-top:10px">
+        <button class="add-btn" onclick="parseSMS()"><span>Parse &amp; Import</span><span>→</span></button>
+      </div>
+      <div id="smsPreview" style="margin-top:10px; font-size:12px; color:var(--text2)"></div>
+    </div>
+  </div>
+
+  <!-- Toast + Confetti -->
+  <div class="toast-container" id="toastContainer"></div>
+  <canvas id="confettiCanvas" class="confetti-canvas"></canvas>
+
+  <!-- ══ SCRIPTS — load order matters ══ -->
+  <script src="config.js"></script>
+  <script src="storage.js"></script>
+  <script src="utils.js"></script>
+  <script src="dashboard.js"></script>
+  <script src="charts.js"></script>
+  <script src="expenseList.js"></script>
+  <script src="analytics.js"></script>
+  <script src="goals.js"></script>
+  <script src="recurring.js"></script>
+  <script src=""></script>
+  <script src="app.js"></script>
+
+</body>
+</html>
