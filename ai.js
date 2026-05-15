@@ -1,8 +1,5 @@
-/* ============================================================
-   ai.js — SpendSense Premium AI
-   AI Spending Coach powered by Claude (Anthropic API).
-   Builds a rich spending context summary and streams answers.
-   ============================================================ */
+
+const GROQ_API_KEY = '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';
 
 /* ── Send from input field ── */
 function sendCoach() {
@@ -13,16 +10,16 @@ function sendCoach() {
   askCoach(q);
 }
 
-/* ── Build spending context for Claude ── */
+/* ── Build spending context ── */
 function buildSpendingContext() {
-  const monthly  = getMonthlyTotal(expenses);
-  const weekly   = getWeeklyTotal(expenses);
-  const today    = getTodayTotal(expenses);
-  const cats     = getCategoryBreakdown(expenses);
+  const monthly    = getMonthlyTotal(expenses);
+  const weekly     = getWeeklyTotal(expenses);
+  const today      = getTodayTotal(expenses);
+  const cats       = getCategoryBreakdown(expenses);
   const catsSorted = Object.entries(cats).sort((a, b) => b[1] - a[1]);
-  const streak   = getSpendingStreak(expenses);
-  const avg      = getAvgDailySpend(expenses);
-  const maxExp   = getMaxExpense(expenses);
+  const streak     = getSpendingStreak(expenses);
+  const avg        = getAvgDailySpend(expenses);
+  const maxExp     = getMaxExpense(expenses);
 
   const now      = new Date();
   const day      = now.getDate();
@@ -35,14 +32,12 @@ function buildSpendingContext() {
     ? Math.round((monthly / budget.monthly) * 100)
     : null;
 
-  // Last 5 expenses for recency context
   const recent = expenses
     .slice(-5)
     .map(e => `${e.name} ₹${e.amount} (${e.category}) on ${e.date}`)
     .join(', ');
 
-  // Goals context
-  const goalsCtx = goals.length
+  const goalsCtx = (typeof goals !== 'undefined' && goals.length)
     ? goals.map(g => `"${g.name}": saved ₹${g.saved} of ₹${g.target}`).join(', ')
     : 'No savings goals set';
 
@@ -54,15 +49,15 @@ BUDGET:
 - Weekly budget:  ₹${budget.weekly  || 'not set'}
 
 THIS MONTH:
-- Spent so far:   ₹${Math.round(monthly)}${budgetPct !== null ? ` (${budgetPct}% of budget)` : ''}
-- Days elapsed:   ${day} of ${dim}
+- Spent so far:       ₹${Math.round(monthly)}${budgetPct !== null ? ` (${budgetPct}% of budget)` : ''}
+- Days elapsed:       ${day} of ${dim}
 - Month-end forecast: ₹${forecast || 'insufficient data'}
 
 THIS WEEK:
-- Weekly spend:   ₹${Math.round(weekly)}
+- Weekly spend: ₹${Math.round(weekly)}
 
 TODAY:
-- Today's spend:  ₹${Math.round(today)}
+- Today's spend: ₹${Math.round(today)}
 
 AVERAGES:
 - Avg daily spend: ₹${Math.round(avg)}
@@ -85,11 +80,35 @@ TOTAL TRACKED:
 `.trim();
 }
 
+/* ── System prompt ── */
+const SYSTEM_PROMPT = `You are a friendly, sharp, and practical AI spending coach embedded in an Indian personal finance app called SpendSense.
+
+Your job: give concise, personalised, actionable financial advice based on the user's real spending data.
+
+Guidelines:
+- Keep answers to 2–5 sentences unless listing multiple points
+- Use Indian context: ₹, Swiggy, Zomato, Flipkart, Ola, IRCTC, UPI etc.
+- Be warm but direct — like a knowledgeable friend, not a robot
+- Use bullet points only when listing 3+ distinct items
+- Never lecture or moralize — just give useful insight
+- If data is sparse, say so kindly and give general advice
+- Avoid generic disclaimers like "consult a financial advisor"`;
+
 /* ── Main coach function ── */
 async function askCoach(question) {
   const msgs = document.getElementById('aiMessages');
 
-  // Append user bubble
+  if (!GROQ_API_KEY || GROQ_API_KEY === 'YOUR_GROQ_API_KEY_HERE') {
+    const errBubble = document.createElement('div');
+    errBubble.className   = 'ai-msg coach';
+    errBubble.style.color = 'var(--red)';
+    errBubble.textContent = '⚠️ Add your Groq API key in ai.js. Get one FREE at console.groq.com — no credit card needed!';
+    msgs.appendChild(errBubble);
+    msgs.scrollTop = msgs.scrollHeight;
+    return;
+  }
+
+  // User bubble
   const userBubble = document.createElement('div');
   userBubble.className   = 'ai-msg user';
   userBubble.textContent = question;
@@ -106,37 +125,34 @@ async function askCoach(question) {
   const context = buildSpendingContext();
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${GROQ_API_KEY}`,
+      },
       body: JSON.stringify({
-        model:      'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: `You are a friendly, sharp, and practical AI spending coach embedded in an Indian personal finance app called SpendSense. 
-
-Your job: give concise, personalised, actionable financial advice based on the user's real spending data provided below.
-
-Guidelines:
-- Keep answers to 2–5 sentences unless listing multiple points
-- Use Indian context: ₹, Swiggy, Zomato, Flipkart, Ola, IRCTC, UPI etc.
-- Be warm but direct — like a knowledgeable friend, not a robot
-- Use bullet points only when listing 3+ distinct items
-- Never lecture or moralize — just give useful insight
-- If data is sparse, say so kindly and give general advice
-- Avoid generic disclaimers like "consult a financial advisor"
-
-User's spending data:
-${context}`,
-        messages: [{ role: 'user', content: question }],
+        model: 'llama-3.1-8b-instant',
+        max_tokens: 600,
+        temperature: 0.7,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user',   content: `Here is my spending data:\n\n${context}\n\nMy question: ${question}` },
+        ],
       }),
     });
 
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err?.error?.message || `HTTP ${response.status}`);
+    }
+
     const data  = await response.json();
-    const reply = data.content?.find(c => c.type === 'text')?.text
+    const reply = data?.choices?.[0]?.message?.content
       || "Sorry, I couldn't process that right now. Try again!";
 
-    // Remove typing, add coach bubble
     document.getElementById('aiTyping')?.remove();
+
     const coachBubble = document.createElement('div');
     coachBubble.className   = 'ai-msg coach';
     coachBubble.textContent = reply;
@@ -145,9 +161,9 @@ ${context}`,
   } catch (err) {
     document.getElementById('aiTyping')?.remove();
     const errBubble = document.createElement('div');
-    errBubble.className = 'ai-msg coach';
+    errBubble.className   = 'ai-msg coach';
     errBubble.style.color = 'var(--red)';
-    errBubble.textContent = '⚠️ Couldn\'t reach the AI. Check your internet connection and try again.';
+    errBubble.textContent = `⚠️ Error: ${err.message}`;
     msgs.appendChild(errBubble);
   }
 
