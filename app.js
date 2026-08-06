@@ -1181,7 +1181,8 @@ function update() {
 /* ══════════════════════════════════════
    INIT
 ══════════════════════════════════════ */
-window.addEventListener('load', () => {
+function bootApp() {
+  appBooted = true;
   /* Load persisted state */
   expenses      = Storage.getExpenses();
   budget        = Storage.getBudget();
@@ -1252,7 +1253,7 @@ window.addEventListener('load', () => {
 
   /* Curtain-wipe the intro loader away now that everything's rendered */
   setTimeout(dismissIntro, 450);
-});
+}
 
 /* ══════════════════════════════════════
    KEYBOARD SHORTCUTS
@@ -1274,6 +1275,7 @@ document.addEventListener('keydown', e => {
     hideEditModal();
     hideSettleModal();
     hideTrophyCase();
+    if (typeof hideAccountModal === 'function') hideAccountModal();
     return;
   }
 

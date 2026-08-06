@@ -26,6 +26,24 @@
     <div class="intro-logo"><span class="intro-emoji">💸</span> Spend<em>Sense</em></div>
   </div>
 
+  <!-- ══ LOGIN / SIGNUP ══ -->
+  <div class="auth-overlay" id="authOverlay">
+    <div class="auth-box">
+      <div class="auth-logo">💸 Spend<em>Sense</em></div>
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="authTabLogin" onclick="switchAuthTab('login')">Log In</button>
+        <button class="auth-tab" id="authTabSignup" onclick="switchAuthTab('signup')">Sign Up</button>
+      </div>
+      <div id="authError" class="auth-error" style="display:none"></div>
+      <input type="email" id="authEmail" class="field-input" placeholder="Email" autocomplete="email" style="margin-bottom:10px" />
+      <input type="password" id="authPassword" class="field-input" placeholder="Password" autocomplete="current-password" style="margin-bottom:6px" />
+      <button class="auth-forgot" onclick="sendPasswordReset()">Forgot password?</button>
+      <button class="add-btn" id="authSubmitBtn" onclick="submitAuthForm()" style="margin-top:10px"><span>Log In</span><span>→</span></button>
+      <button class="auth-skip" onclick="skipAuth()">Continue without an account →</button>
+      <div class="auth-note">Signing in syncs your data across your devices. Skipping keeps everything local to just this device, like before.</div>
+    </div>
+  </div>
+
   <!-- Goo filter powers the liquid cursor trail below -->
   <svg width="0" height="0" style="position:absolute">
     <filter id="goo">
@@ -72,6 +90,7 @@
           <button class="theme-btn" onclick="toggleTheme()">☀️ <span id="themeLabel">Light</span></button>
           <button class="theme-btn icon-btn" onclick="showShortcuts()" title="Keyboard shortcuts">⌨️</button>
           <button class="theme-btn icon-btn" onclick="showTrophyCase()" title="Trophy Case">🏆</button>
+          <button class="theme-btn icon-btn" onclick="showAccountModal()" title="Account">👤</button>
           <button class="theme-btn install-btn" id="installBtn" onclick="installApp()" style="display:none" title="Install SpendSense">📲 Install</button>
         </div>
         <div class="header-divider"></div>
@@ -683,6 +702,17 @@
     </div>
   </div>
 
+  <!-- Account Modal -->
+  <div class="modal-overlay" id="accountModal" onclick="if(event.target===this) hideAccountModal()">
+    <div class="modal-box" style="max-width:360px">
+      <div class="modal-title">
+        Account
+        <button class="modal-close" onclick="hideAccountModal()">×</button>
+      </div>
+      <div id="accountModalBody"></div>
+    </div>
+  </div>
+
   <!-- Trophy Case Modal -->
   <div class="modal-overlay" id="trophyModal" onclick="if(event.target===this) hideTrophyCase()">
     <div class="modal-box" style="max-width:420px">
@@ -746,6 +776,12 @@
   </div>
 
   <!-- ══ SCRIPTS — load order matters ══ -->
+  <!-- Firebase (optional cloud sync — app works fully without it if unconfigured) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
   <script src="config.js"></script>
   <script src="storage.js"></script>
   <script src="utils.js"></script>
@@ -758,6 +794,7 @@
   <script src="ai.local.js"></script>
   <script src="ai.js"></script>
   <script src="app.js"></script>
+  <script src="auth.js"></script>
 
 </body>
 </html>

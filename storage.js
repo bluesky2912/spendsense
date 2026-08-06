@@ -11,6 +11,7 @@ const Storage = {
 
   set(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
+    if (typeof scheduleCloudSync === 'function') scheduleCloudSync();
   },
 
   /* Expenses */
