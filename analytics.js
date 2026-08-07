@@ -106,6 +106,42 @@ function renderCatBudgetBars() {
   }).join('');
 }
 
+/* ── Payment Method breakdown (this month) ── */
+function updatePaymentBreakdown() {
+  const el = document.getElementById('paymentBreakdown');
+  if (!el) return;
+
+  const now = new Date();
+  const monthExp = expenses.filter(e => {
+    const d = parseDate(e.date);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  const tagged = monthExp.filter(e => e.paymentMethod);
+
+  if (!tagged.length) {
+    el.innerHTML = '<div style="font-size:12px; color:var(--text2); text-align:center; padding:20px">Tag a payment method on your expenses to see this breakdown</div>';
+    return;
+  }
+
+  const totals = {};
+  tagged.forEach(e => { totals[e.paymentMethod] = (totals[e.paymentMethod] || 0) + e.amount; });
+  const total = tagged.reduce((s, e) => s + e.amount, 0);
+  const max   = Math.max(...Object.values(totals));
+
+  el.innerHTML = Object.entries(totals).sort((a, b) => b[1] - a[1]).map(([method, amt]) => {
+    const pct  = Math.round((amt / max) * 100);
+    const info = PAYMENT_METHODS[method] || { emoji: '💰', color: '#94a3b8' };
+    return `
+      <div class="cat-budget-item">
+        <div class="cat-budget-header">
+          <span class="cat-budget-name">${info.emoji} ${method}</span>
+          <span class="cat-budget-amount">${fmt(amt)} (${Math.round((amt / total) * 100)}%)</span>
+        </div>
+        <div class="cat-budget-bar"><div class="cat-budget-fill" style="width:${pct}%; background:${info.color}"></div></div>
+      </div>`;
+  }).join('');
+}
+
 /* ── Smart Insights (algorithmic, no AI call needed) ── */
 function computeSmartInsights() {
   const insights = [];

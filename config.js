@@ -18,6 +18,13 @@ const CAT = {
   Other:         { emoji: '📌', color: '#94a3b8', bg: 'rgba(148,163,184,0.15)'},
 };
 
+/* ── Payment methods ── */
+const PAYMENT_METHODS = {
+  Cash: { emoji: '💵', color: '#00e5a0' },
+  Card: { emoji: '💳', color: '#6c63ff' },
+  UPI:  { emoji: '📲', color: '#3b82f6' },
+};
+
 /* ── Income sources ── */
 const INCOME_SOURCES = {
   Salary:     { emoji: '💼', color: '#00e5a0' },

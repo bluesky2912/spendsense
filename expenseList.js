@@ -58,11 +58,13 @@ function buildExpenseItem(e, avg = 0) {
   const isAnomalous = avg > 0 && e.amount > avg * 2.5 && expenses.length > 5;
 
   const moodEmoji = { happy: '😊', meh: '😐', regret: '😔' };
+  const paymentEmoji = { Cash: '💵', Card: '💳', UPI: '📲' };
   const badges = [
     e.isRecurring ? '<span class="expense-badge badge-recur">🔄 recurring</span>' : '',
     e.splitWith   ? `<span class="expense-badge badge-split">🔀 split w/ ${escapeHtml(e.splitWith)}</span>` : '',
     isAnomalous   ? '<span class="expense-badge badge-anomaly">⚠️ large</span>' : '',
     e.mood        ? `<span class="expense-badge badge-mood">${moodEmoji[e.mood]}</span>` : '',
+    e.paymentMethod ? `<span class="expense-badge badge-payment">${paymentEmoji[e.paymentMethod]} ${e.paymentMethod}</span>` : '',
   ].filter(Boolean).join('');
 
   const cb = bulkMode
@@ -103,6 +105,7 @@ function openEditExpense(id) {
   document.getElementById('editName').value   = e.name;
   document.getElementById('editAmount').value = e.amount;
   document.getElementById('editDate').value   = e.date;
+  document.getElementById('editPayment').value = e.paymentMethod || '';
 
   const sel = document.getElementById('editCategory');
   sel.innerHTML = Object.keys(CAT).map(c =>
@@ -126,12 +129,15 @@ function saveEditExpense() {
   const amount   = parseFloat(document.getElementById('editAmount').value);
   const category = document.getElementById('editCategory').value;
   const date     = document.getElementById('editDate').value;
+  const paymentMethod = document.getElementById('editPayment').value;
 
   if (!name)                  { showToast('❌ Enter a description', 'error');  return; }
   if (!amount || amount <= 0) { showToast('❌ Enter a valid amount', 'error'); return; }
   if (!date)                  { showToast('❌ Select a date', 'error');       return; }
 
   e.name = name; e.amount = amount; e.category = category; e.date = date;
+  if (paymentMethod) e.paymentMethod = paymentMethod;
+  else delete e.paymentMethod;
   Storage.saveExpenses(expenses);
   hideEditModal();
   update();
@@ -232,7 +238,7 @@ function exportCSV() {
   if (!expenses.length) { showToast('⚠️ No expenses to export', 'error'); return; }
 
   const rows = [
-    'Date,Name,Category,Amount,Split With,Recurring',
+    'Date,Name,Category,Amount,Payment Method,Split With,Recurring',
     ...expenses
       .slice()
       .sort((a, b) => b.date.localeCompare(a.date))
@@ -242,6 +248,7 @@ function exportCSV() {
           csvField(e.name),
           e.category,
           e.amount,
+          e.paymentMethod || '',
           csvField(e.splitWith || ''),
           e.isRecurring ? 'Yes' : 'No',
         ].join(',')

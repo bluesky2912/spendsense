@@ -59,6 +59,7 @@ function addExpense() {
   const isSplit     = document.getElementById('splitToggle').checked;
   const splitWith   = isSplit ? document.getElementById('splitPerson').value.trim() : '';
   const mood        = document.getElementById('expMood').value;
+  const paymentMethod = document.getElementById('expPayment').value;
 
   /* Validation */
   if (!name)              { showToast('❌ Please enter a description', 'error'); shakeInput('expName');   return; }
@@ -70,6 +71,7 @@ function addExpense() {
   if (splitWith)   exp.splitWith   = splitWith;
   if (isRecurring) exp.isRecurring = true;
   if (mood)        exp.mood        = mood;
+  if (paymentMethod) exp.paymentMethod = paymentMethod;
 
   /* If recurring, also add to recurring rules */
   if (isRecurring) {
@@ -92,6 +94,7 @@ function addExpense() {
   document.getElementById('expAmount').value = '';
   document.getElementById('autoDetectHint').textContent = '';
   resetMoodSelector();
+  resetPaymentSelector();
 
   addXP(5);
   fireCoinBurst();
@@ -231,6 +234,7 @@ function switchTab(tab, btn) {
   /* Lazy-render analytics widgets only when tab is visible */
   if (tab === 'analytics') {
     renderSmartInsights();
+    updatePaymentBreakdown();
     updateMoM();
     renderCatBudgetInputs();
     renderCatBudgetBars();
@@ -1051,6 +1055,27 @@ function resetMoodSelector() {
 }
 
 /* ══════════════════════════════════════
+   PAYMENT METHOD TAGGING — optional, how you paid
+══════════════════════════════════════ */
+function selectPayment(btn) {
+  const field  = document.getElementById('expPayment');
+  const method = btn.dataset.method;
+  const isSame = field.value === method;
+  document.querySelectorAll('.payment-btn').forEach(b => b.classList.remove('active'));
+  if (isSame) {
+    field.value = '';
+  } else {
+    btn.classList.add('active');
+    field.value = method;
+  }
+}
+
+function resetPaymentSelector() {
+  document.getElementById('expPayment').value = '';
+  document.querySelectorAll('.payment-btn').forEach(b => b.classList.remove('active'));
+}
+
+/* ══════════════════════════════════════
    DAILY NUDGE — a friendly reminder if today has no entries yet
 ══════════════════════════════════════ */
 function checkDailyNudge() {
@@ -1168,6 +1193,7 @@ function update() {
   /* Only re-render analytics widgets if that tab is currently visible */
   if (currentTab === 'analytics') {
     renderSmartInsights();
+    updatePaymentBreakdown();
     updateMoM();
     renderCatBudgetBars();
     updateReportCard();
