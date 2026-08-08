@@ -86,12 +86,21 @@
         </div>
       </div>
       <div class="header-right">
-        <div class="header-group">
+        <div class="header-group utility-group">
           <button class="theme-btn" onclick="toggleTheme()">☀️ <span id="themeLabel">Light</span></button>
           <button class="theme-btn icon-btn" onclick="showShortcuts()" title="Keyboard shortcuts">⌨️</button>
           <button class="theme-btn icon-btn" onclick="showTrophyCase()" title="Trophy Case">🏆</button>
           <button class="theme-btn icon-btn" onclick="showAccountModal()" title="Account">👤</button>
-          <button class="theme-btn install-btn" id="installBtn" onclick="installApp()" style="display:none" title="Install SpendSense">📲 Install</button>
+        </div>
+        <button class="theme-btn install-btn" id="installBtn" onclick="installApp()" style="display:none" title="Install SpendSense">📲 Install</button>
+        <div class="header-more-wrap">
+          <button class="theme-btn icon-btn more-btn" onclick="toggleHeaderMenu(event)" title="More">⋯</button>
+          <div class="header-dropdown" id="headerDropdown">
+            <button onclick="toggleTheme(); closeHeaderMenu();">☀️ <span id="themeLabelMenu">Toggle Theme</span></button>
+            <button onclick="showShortcuts(); closeHeaderMenu();">⌨️ Shortcuts</button>
+            <button onclick="showTrophyCase(); closeHeaderMenu();">🏆 Trophy Case</button>
+            <button onclick="showAccountModal(); closeHeaderMenu();">👤 Account</button>
+          </div>
         </div>
         <div class="header-divider"></div>
         <div class="header-group">

@@ -45,6 +45,8 @@ function addToGoal(id) {
   renderGoals();
   showToast(`💰 ${fmt(v)} added to "${g.name}"!`, 'success');
   addXP(8);
+  if (typeof markDailyAction === 'function') markDailyAction('contributed');
+  if (typeof checkAchievements === 'function') checkAchievements();
 
   if (g.saved >= g.target) {
     fireConfetti();

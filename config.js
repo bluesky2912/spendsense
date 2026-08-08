@@ -144,8 +144,9 @@ function levelInfo(xpTotal) {
   };
 }
 
-/* ── Daily Quests — reset every day, checked against today's data ── */
-const DAILY_QUESTS = [
+/* ── Daily Quests — a pool of 6, with 3 rotating in each day so it
+   stays varied instead of being the same static checklist forever. ── */
+const QUEST_POOL = [
   {
     id: 'log1', icon: '📝', title: 'First entry of the day',
     desc: 'Log at least 1 expense today', xp: 10,
@@ -161,7 +162,30 @@ const DAILY_QUESTS = [
     desc: 'Log 3 expenses today', xp: 15,
     check: exp => exp.filter(e => e.date === todayStr()).length >= 3,
   },
+  {
+    id: 'income1', icon: '💰', title: 'Log income',
+    desc: 'Add an income entry today', xp: 10,
+    check: () => (typeof incomes !== 'undefined' && incomes.some(i => i.date === todayStr())),
+  },
+  {
+    id: 'edit1', icon: '✏️', title: 'Tidy up',
+    desc: 'Edit any expense today', xp: 8,
+    check: () => (typeof getDailyAction === 'function' && getDailyAction('edited')),
+  },
+  {
+    id: 'goal1', icon: '🎯', title: 'Fund a goal',
+    desc: 'Put money toward a savings goal today', xp: 12,
+    check: () => (typeof getDailyAction === 'function' && getDailyAction('contributed')),
+  },
 ];
+
+/* Deterministic-but-varied: which 3 quests show depends on the day,
+   so tomorrow's set is different without needing any stored state. */
+function todaysQuests() {
+  const dayIndex = Math.floor(Date.now() / 86400000);
+  const n = QUEST_POOL.length;
+  return [0, 2, 4].map(offset => QUEST_POOL[(dayIndex + offset) % n]);
+}
 
 /* ── Achievement milestones ── */
 const ACHIEVEMENTS = [
@@ -204,5 +228,47 @@ const ACHIEVEMENTS = [
     title: '3 No-Spend Days!',
     desc: 'Three consecutive zero-spend days!',
     check: (exp) => getNoSpendStreak(exp) >= 3,
+  },
+  {
+    id: 'century', emoji: '💯',
+    title: 'Century Club',
+    desc: 'Logged 100 expenses total.',
+    check: (exp) => exp.length >= 100,
+  },
+  {
+    id: 'week_streak', emoji: '🗓️',
+    title: 'Full Week Streak',
+    desc: 'Tracked expenses 7 days in a row.',
+    check: (exp) => getSpendingStreak(exp) >= 7,
+  },
+  {
+    id: 'month_streak', emoji: '📅',
+    title: 'Full Month Streak',
+    desc: 'Tracked expenses 30 days in a row.',
+    check: (exp) => getSpendingStreak(exp) >= 30,
+  },
+  {
+    id: 'level5', emoji: '⭐',
+    title: 'Level 5 Reached',
+    desc: 'Hit level 5 — Savings Scout status.',
+    check: () => (typeof xp !== 'undefined' && typeof levelInfo === 'function' && levelInfo(xp).level >= 5),
+  },
+  {
+    id: 'first_income', emoji: '💼',
+    title: 'First Paycheck',
+    desc: 'Logged your first income entry.',
+    check: () => (typeof incomes !== 'undefined' && incomes.length >= 1),
+  },
+  {
+    id: 'first_settle', emoji: '🤝',
+    title: 'Settled Up',
+    desc: 'Recorded your first split settlement.',
+    check: () => (typeof settlements !== 'undefined' && settlements.length >= 1),
+  },
+  {
+    id: 'goal_complete', emoji: '🏁',
+    title: 'Goal Crushed',
+    desc: 'Fully funded a savings goal.',
+    check: () => (typeof goals !== 'undefined' && goals.some(g => g.saved >= g.target)),
   },
 ];

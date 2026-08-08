@@ -139,6 +139,7 @@ function saveEditExpense() {
   if (paymentMethod) e.paymentMethod = paymentMethod;
   else delete e.paymentMethod;
   Storage.saveExpenses(expenses);
+  if (typeof markDailyAction === 'function') markDailyAction('edited');
   hideEditModal();
   update();
   showToast('✏️ Expense updated', 'success');

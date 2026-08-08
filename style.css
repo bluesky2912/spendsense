@@ -187,8 +187,28 @@ body.light .ring-fill { stroke: var(--accent); }
 }
 .quest-claim-btn:active { transform: scale(.85); }
 @keyframes questPulse { 0%,100%{box-shadow:0 0 0 0 rgba(0,229,160,.5);} 50%{box-shadow:0 0 0 7px rgba(0,229,160,0);} }
-.quest-claimed { font-size: 11px; color: var(--green); font-weight: 700; flex-shrink: 0; white-space: nowrap; }
+.quest-claimed { font-size: 11px; color: var(--green); font-weight: 700; flex-shrink: 0; white-space: nowrap; animation: questClaimedPop .35s steps(5) both; }
 .quest-locked  { font-size: 14px; opacity: .4; flex-shrink: 0; }
+@keyframes questClaimedPop {
+  0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+
+/* ── STOP-MOTION XP FLOAT — deliberately chunky/stepped, not smooth,
+   as a distinct "game feedback" style from the rest of the app's
+   fluid spring animations. ── */
+.xp-float {
+  position: fixed; z-index: 9996; pointer-events: none;
+  font-family: var(--ff-mono); font-weight: 700; font-size: 13px; color: var(--green);
+  transform: translate(-50%, 0);
+  animation: xpFloatStop .95s steps(6) forwards;
+  text-shadow: 0 0 8px rgba(0,229,160,.6);
+}
+@keyframes xpFloatStop {
+  0%   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  65%  { opacity: 1; transform: translate(-50%, -36px) scale(1.2); }
+  100% { opacity: 0; transform: translate(-50%, -48px) scale(1); }
+}
 
 /* ── TROPHY CASE ── */
 .trophy-item {
@@ -465,6 +485,27 @@ body.flash-pulse { animation: screenFlash .6s ease; }
 .theme-btn:active { border-color: var(--accent); color: var(--text); }
 .theme-btn.icon-btn { padding: 8px 10px; }
 .theme-btn.install-btn { border-color: rgba(0,229,160,.35); color: var(--green); }
+
+/* ── HEADER "MORE" MENU (mobile) ── */
+.header-more-wrap { position: relative; display: none; }
+.header-dropdown {
+  position: absolute; top: calc(100% + 8px); right: 0;
+  background: var(--bg3); border: 1px solid var(--border2); border-radius: 12px;
+  padding: 6px; display: none; flex-direction: column; gap: 2px; min-width: 170px; z-index: 500;
+  box-shadow: 0 14px 32px rgba(0,0,0,.55);
+}
+.header-dropdown.show { display: flex; animation: modalPop .3s cubic-bezier(.34,1.56,.64,1); }
+.header-dropdown button {
+  display: flex; align-items: center; gap: 8px; padding: 10px 10px;
+  background: transparent; border: none; color: var(--text); font-size: 13px;
+  text-align: left; border-radius: 8px; cursor: pointer; font-family: var(--ff-body);
+}
+.header-dropdown button:active { background: var(--bg4); }
+
+@media (max-width: 560px) {
+  .utility-group    { display: none; }
+  .header-more-wrap { display: block; }
+}
 
 /* ── SAVAGE TOGGLE ── */
 .savage-toggle {

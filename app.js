@@ -210,6 +210,24 @@ function checkAchievements() {
 }
 
 /* ══════════════════════════════════════
+   HEADER "MORE" MENU (mobile-collapsed utility icons)
+══════════════════════════════════════ */
+function toggleHeaderMenu(e) {
+  if (e) e.stopPropagation();
+  document.getElementById('headerDropdown')?.classList.toggle('show');
+}
+function closeHeaderMenu() {
+  document.getElementById('headerDropdown')?.classList.remove('show');
+}
+document.addEventListener('click', e => {
+  const dd  = document.getElementById('headerDropdown');
+  const btn = document.querySelector('.more-btn');
+  if (dd && dd.classList.contains('show') && !dd.contains(e.target) && e.target !== btn) {
+    dd.classList.remove('show');
+  }
+});
+
+/* ══════════════════════════════════════
    TAB SWITCHING
 ══════════════════════════════════════ */
 function switchTab(tab, btn) {
@@ -756,6 +774,21 @@ function initScrollReveal() {
 }
 
 /* ══════════════════════════════════════
+   DAILY ACTION LOG — tiny date-scoped tracker so quests can check
+   things like "did you edit anything today" without new arrays.
+══════════════════════════════════════ */
+function markDailyAction(action) {
+  let log = Storage.get('ss_daily_actions');
+  if (!log || log.date !== todayStr()) log = { date: todayStr() };
+  log[action] = true;
+  Storage.set('ss_daily_actions', log);
+}
+function getDailyAction(action) {
+  const log = Storage.get('ss_daily_actions');
+  return !!(log && log.date === todayStr() && log[action]);
+}
+
+/* ══════════════════════════════════════
    DAILY QUESTS — concrete, small reasons to open the app each day
 ══════════════════════════════════════ */
 function renderQuests() {
@@ -763,9 +796,10 @@ function renderQuests() {
   if (!el) return;
 
   const claims = Storage.getQuestClaims();
+  const quests = todaysQuests();
   let doneCount = 0;
 
-  el.innerHTML = DAILY_QUESTS.map(q => {
+  el.innerHTML = quests.map(q => {
     const done = q.check(expenses);
     const claimed = claims.claimed.includes(q.id);
     if (claimed) doneCount++;
@@ -787,13 +821,13 @@ function renderQuests() {
   }).join('');
 
   const progressEl = document.getElementById('questProgress');
-  if (progressEl) progressEl.textContent = `${doneCount}/${DAILY_QUESTS.length}`;
+  if (progressEl) progressEl.textContent = `${doneCount}/${quests.length}`;
 
   if (typeof initRipple === 'function') initRipple();
 }
 
 function claimQuest(id) {
-  const quest = DAILY_QUESTS.find(q => q.id === id);
+  const quest = todaysQuests().find(q => q.id === id);
   if (!quest) return;
 
   const claims = Storage.getQuestClaims();
@@ -938,6 +972,7 @@ function confirmSettle() {
   fireConfetti();
   fireSettleBurst();
   renderSplitTab();
+  checkAchievements();
   showToast(`🤝 Settled ₹${Math.round(amt)} with ${person}!`, 'success');
 }
 
@@ -962,6 +997,7 @@ function addIncome() {
   fireCoinBurst();
   update();
   renderIncomeList();
+  checkAchievements();
   showToast(`💰 ${fmt(amount)} income logged!`, 'success');
 }
 
@@ -1004,10 +1040,29 @@ function addXP(amount) {
   Storage.saveXP(xp);
   const after = levelInfo(xp).level;
   updateLevelBadge();
+  floatXP(amount);
 
   if (after > before) {
     showLevelUpCinematic(after, levelTitle(after));
   }
+}
+
+/* Stop-motion style floating "+N XP" — moves in a handful of
+   discrete jumps (steps()) rather than smooth easing, for a chunky
+   claymation-esque pop next to the level badge. */
+function floatXP(amount) {
+  const badge = document.getElementById('levelBadge');
+  if (!badge) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const r = badge.getBoundingClientRect();
+  const span = document.createElement('span');
+  span.className = 'xp-float';
+  span.textContent = `+${amount} XP`;
+  span.style.left = (r.left + r.width / 2) + 'px';
+  span.style.top  = r.top + 'px';
+  document.body.appendChild(span);
+  setTimeout(() => span.remove(), 950);
 }
 
 function showLevelUpCinematic(level, title) {
