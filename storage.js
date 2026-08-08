@@ -34,6 +34,12 @@ const Storage = {
   getDismissedRecurring()    { return this.get('ss_dismissed_recurring') || []; },
   saveDismissedRecurring(arr){ this.set('ss_dismissed_recurring', arr); },
 
+  /* Quick Notes scratchpad */
+  getNotes()    { return this.get('ss_notes') || ''; },
+  saveNotes(txt){ this.set('ss_notes', txt); },
+  getNotesMeta()   { return this.get('ss_notes_meta') || { savedAt: null, remindedAt: null }; },
+  saveNotesMeta(o) { this.set('ss_notes_meta', o); },
+
   /* Budget */
   getBudget()    { return this.get('ss_budget') || { monthly: 20000, weekly: 5000 }; },
   saveBudget(b)  { this.set('ss_budget', b); },
@@ -80,7 +86,7 @@ const Storage = {
       'ss_expenses', 'ss_budget', 'ss_savage', 'ss_unlocked',
       'ss_goals', 'ss_catbudgets', 'ss_recurring', 'ss_theme',
       'ss_xp', 'ss_nudge_dismissed', 'ss_incomes', 'ss_settlements', 'ss_quest_claims', 'ss_chat_history',
-      'ss_dismissed_recurring',
+      'ss_dismissed_recurring', 'ss_notes', 'ss_notes_meta',
     ].forEach(k => localStorage.removeItem(k));
   },
 };

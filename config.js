@@ -177,14 +177,55 @@ const QUEST_POOL = [
     desc: 'Put money toward a savings goal today', xp: 12,
     check: () => (typeof getDailyAction === 'function' && getDailyAction('contributed')),
   },
+  {
+    id: 'payment1', icon: '💳', title: 'Tag how you paid',
+    desc: 'Add a payment method to any expense today', xp: 8,
+    check: exp => exp.some(e => e.date === todayStr() && e.paymentMethod),
+  },
+  {
+    id: 'dup1', icon: '⧉', title: 'Quick repeat',
+    desc: 'Duplicate an expense today', xp: 8,
+    check: () => (typeof getDailyAction === 'function' && getDailyAction('duplicated')),
+  },
+  {
+    id: 'analytics1', icon: '📈', title: 'Check your numbers',
+    desc: 'Visit the Analytics tab today', xp: 6,
+    check: () => (typeof getDailyAction === 'function' && getDailyAction('visitedAnalytics')),
+  },
+  {
+    id: 'coach1', icon: '🧠', title: 'Ask the coach',
+    desc: 'Ask the AI Coach a question today', xp: 10,
+    check: () => (typeof getDailyAction === 'function' && getDailyAction('askedCoach')),
+  },
+  {
+    id: 'underpace', icon: '🏃', title: 'Beat the pace',
+    desc: "Spend less than your daily average today", xp: 12,
+    check: exp => {
+      if (typeof budget === 'undefined' || !budget.monthly) return false;
+      const todayTotal = exp.filter(e => e.date === todayStr()).reduce((s, e) => s + e.amount, 0);
+      return todayTotal > 0 && todayTotal < (budget.monthly / 30);
+    },
+  },
 ];
 
-/* Deterministic-but-varied: which 3 quests show depends on the day,
+/* Small seeded shuffle so the day's quests feel genuinely different
+   rather than following an obvious repeating pattern. */
+function seededShuffle(arr, seed) {
+  const a = arr.slice();
+  let s = seed;
+  for (let i = a.length - 1; i > 0; i--) {
+    s = (s * 9301 + 49297) % 233280;
+    const j = Math.floor((s / 233280) * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* Deterministic-but-varied: which quests show depends on the day,
    so tomorrow's set is different without needing any stored state. */
 function todaysQuests() {
   const dayIndex = Math.floor(Date.now() / 86400000);
-  const n = QUEST_POOL.length;
-  return [0, 2, 4].map(offset => QUEST_POOL[(dayIndex + offset) % n]);
+  return seededShuffle(QUEST_POOL, dayIndex).slice(0, 3);
 }
 
 /* ── Achievement milestones ── */

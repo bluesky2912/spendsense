@@ -22,7 +22,7 @@ const SS_KEYS = [
   'ss_expenses', 'ss_budget', 'ss_savage', 'ss_unlocked', 'ss_goals',
   'ss_catbudgets', 'ss_recurring', 'ss_theme', 'ss_xp', 'ss_nudge_dismissed',
   'ss_incomes', 'ss_settlements', 'ss_quest_claims', 'ss_chat_history',
-  'ss_dismissed_recurring',
+  'ss_dismissed_recurring', 'ss_notes', 'ss_notes_meta',
 ];
 
 /* ── Firebase init (safe no-op if config was never filled in) ── */

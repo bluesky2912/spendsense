@@ -241,6 +241,20 @@
         <div id="questList"></div>
       </div>
 
+      <!-- QUICK NOTES -->
+      <div class="panel notes-panel">
+        <div class="panel-header">
+          <h2 class="panel-title">📌 Quick Notes</h2>
+          <div class="panel-badge" id="notesSavedBadge" style="opacity:0; transition:opacity .3s">Saved</div>
+        </div>
+        <textarea id="quickNotes" class="notes-textarea"
+          placeholder="Jot anything down — cancel that subscription, ask for the rent split, remember to check the electricity bill..."></textarea>
+        <div class="notes-remind-row">
+          <span class="notes-remind-text" id="notesRemindText">🔔 Get reminded about this note after a day if you haven't cleared it</span>
+          <button class="notes-remind-btn" id="notesRemindBtn" onclick="enableNoteReminders()">Enable</button>
+        </div>
+      </div>
+
       <!-- MAIN GRID -->
       <div class="main-grid">
 

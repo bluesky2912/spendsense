@@ -196,6 +196,7 @@ async function askCoach(question) {
   userBubble.className   = 'ai-msg user';
   userBubble.textContent = question;
   msgs.appendChild(userBubble);
+  if (typeof markDailyAction === 'function') markDailyAction('askedCoach');
 
   chatHistory.push({ role: 'user', text: question });
   Storage.saveChatHistory(chatHistory);

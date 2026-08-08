@@ -153,6 +153,7 @@ function duplicateExpense(id) {
   delete copy.isRecurAuto;
   expenses.push(copy);
   Storage.saveExpenses(expenses);
+  if (typeof markDailyAction === 'function') markDailyAction('duplicated');
   update();
   showToast('⧉ Expense duplicated', 'success');
   checkAchievements();

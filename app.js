@@ -184,6 +184,8 @@ function clearAll() {
   document.getElementById('monthlyBudget').value = 20000;
   document.getElementById('weeklyBudget').value  = 5000;
   document.getElementById('savageToggle').classList.remove('active');
+  const notesEl = document.getElementById('quickNotes');
+  if (notesEl) notesEl.value = '';
 
   update();
   updateLevelBadge();
@@ -210,11 +212,124 @@ function checkAchievements() {
 }
 
 /* ══════════════════════════════════════
+   QUICK NOTES — a simple scratchpad, auto-saves as you type, and
+   can remind you about it a day later if you never came back to it.
+══════════════════════════════════════ */
+let notesSaveTimer = null;
+const NOTE_REMINDER_DELAY_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+function initQuickNotes() {
+  const el = document.getElementById('quickNotes');
+  if (!el) return;
+  el.value = Storage.getNotes();
+  autoGrowNotes(el);
+  updateReminderButtonState();
+
+  el.addEventListener('input', () => {
+    autoGrowNotes(el);
+    clearTimeout(notesSaveTimer);
+    notesSaveTimer = setTimeout(() => {
+      Storage.saveNotes(el.value);
+      /* New content = restart the reminder countdown */
+      Storage.saveNotesMeta({ savedAt: new Date().toISOString(), remindedAt: null });
+      flashNotesSaved();
+      if (typeof markDailyAction === 'function') markDailyAction('wroteNote');
+    }, 600);
+  });
+
+  checkNoteReminder();
+  setInterval(checkNoteReminder, 15 * 60 * 1000); // re-check every 15 min while the app is open
+}
+
+function autoGrowNotes(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 320) + 'px';
+}
+
+function flashNotesSaved() {
+  const badge = document.getElementById('notesSavedBadge');
+  if (!badge) return;
+  badge.style.opacity = '1';
+  clearTimeout(badge._hideTimer);
+  badge._hideTimer = setTimeout(() => { badge.style.opacity = '0'; }, 1400);
+}
+
+function enableNoteReminders() {
+  if (!('Notification' in window)) {
+    showToast('⚠️ Your browser doesn\'t support notifications — you\'ll still get in-app reminders', 'error');
+    return;
+  }
+  Notification.requestPermission().then(perm => {
+    updateReminderButtonState();
+    if (perm === 'granted') showToast('🔔 Reminders enabled — you\'ll also get a system notification', 'success');
+    else if (perm === 'denied') showToast('🔕 Notifications blocked — you\'ll still get in-app reminders when you open the app', 'default');
+  });
+}
+
+function updateReminderButtonState() {
+  const btn = document.getElementById('notesRemindBtn');
+  const txt = document.getElementById('notesRemindText');
+  if (!btn) return;
+  const supported = 'Notification' in window;
+  const granted = supported && Notification.permission === 'granted';
+  btn.classList.toggle('enabled', granted);
+  btn.textContent = granted ? 'Enabled ✓' : 'Enable';
+  if (txt) txt.textContent = granted
+    ? '🔔 You\'ll be reminded about unfinished notes after a day'
+    : '🔔 Get reminded about this note after a day if you haven\'t cleared it';
+}
+
+/* Checked on load and every 15 min while the app stays open — this
+   is best-effort by nature (a static site can't wake a fully closed
+   browser); it catches things the moment the app is next opened, and
+   fires a real system notification too if the tab is merely
+   backgrounded and permission was granted. */
+function checkNoteReminder() {
+  const text = Storage.getNotes();
+  if (!text || !text.trim()) return;
+
+  const meta = Storage.getNotesMeta();
+  if (!meta.savedAt || meta.remindedAt) return;
+
+  const age = Date.now() - new Date(meta.savedAt).getTime();
+  if (age < NOTE_REMINDER_DELAY_MS) return;
+
+  const preview = text.trim().slice(0, 80) + (text.trim().length > 80 ? '…' : '');
+  showToast(`📌 You wrote a note a while back — still on it? "${preview}"`, 'default', {
+    label: 'Got it', onClick: () => {},
+  });
+
+  if ('Notification' in window && Notification.permission === 'granted') {
+    try { new Notification('📌 SpendSense reminder', { body: preview, icon: 'icon-192.png' }); } catch (e) { /* ignore */ }
+  }
+
+  Storage.saveNotesMeta({ ...meta, remindedAt: new Date().toISOString() });
+}
+
+/* ══════════════════════════════════════
    HEADER "MORE" MENU (mobile-collapsed utility icons)
 ══════════════════════════════════════ */
 function toggleHeaderMenu(e) {
   if (e) e.stopPropagation();
-  document.getElementById('headerDropdown')?.classList.toggle('show');
+  const dd  = document.getElementById('headerDropdown');
+  const btn = document.querySelector('.more-btn');
+  if (!dd || !btn) return;
+
+  const opening = !dd.classList.contains('show');
+  if (opening) {
+    const r = btn.getBoundingClientRect();
+    const ddWidth = Math.min(190, window.innerWidth - 24);
+    let left = r.left;
+    if (left + ddWidth > window.innerWidth - 12) left = window.innerWidth - ddWidth - 12;
+    if (left < 12) left = 12;
+
+    dd.style.position = 'fixed';
+    dd.style.left  = left + 'px';
+    dd.style.right = 'auto';
+    dd.style.top   = (r.bottom + 8) + 'px';
+    dd.style.width = ddWidth + 'px';
+  }
+  dd.classList.toggle('show');
 }
 function closeHeaderMenu() {
   document.getElementById('headerDropdown')?.classList.remove('show');
@@ -251,6 +366,7 @@ function switchTab(tab, btn) {
 
   /* Lazy-render analytics widgets only when tab is visible */
   if (tab === 'analytics') {
+    if (typeof markDailyAction === 'function') markDailyAction('visitedAnalytics');
     renderSmartInsights();
     updatePaymentBreakdown();
     updateMoM();
@@ -1321,6 +1437,7 @@ function bootApp() {
   }
   renderIncomeList();
   if (typeof loadChatHistory === 'function') loadChatHistory();
+  initQuickNotes();
 
   /* Fun stuff: magnetic buttons, ripple feedback, ambient orb motion */
   initMagneticButtons();

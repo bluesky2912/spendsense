@@ -163,6 +163,47 @@ body.light .ring-fill { stroke: var(--accent); }
 }
 .suggestion-dismiss:active { transform: scale(.8); color: var(--red); }
 
+/* ── QUICK NOTES ── */
+.notes-panel {
+  margin-bottom: 14px; position: relative; overflow: hidden;
+  background: linear-gradient(160deg, var(--bg2) 0%, rgba(108,99,255,.06) 100%);
+}
+.notes-panel::before {
+  content: ''; position: absolute; top: -40px; right: -40px; width: 140px; height: 140px;
+  background: radial-gradient(circle, rgba(255,107,157,.12), transparent 70%);
+  pointer-events: none;
+}
+.notes-panel .panel-badge {
+  font-size: 10px; color: var(--green); background: rgba(0,229,160,.12);
+  border-radius: 8px; padding: 3px 8px; font-family: var(--ff-mono);
+}
+.notes-textarea {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; min-height: 64px; max-height: 320px; resize: none; overflow-y: auto;
+  background-color: var(--bg3) !important; background-image: none;
+  border: 1px solid var(--border); border-radius: 12px;
+  padding: 13px 15px; color: var(--text) !important; -webkit-text-fill-color: var(--text);
+  font-family: var(--ff-body); font-size: 13.5px; line-height: 1.65;
+  transition: border-color .25s, box-shadow .25s;
+  caret-color: var(--accent2);
+}
+.notes-textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(108,99,255,.12); }
+.notes-textarea::placeholder { color: var(--text2); }
+.notes-panel > * { position: relative; z-index: 1; }
+.notes-remind-row {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  margin-top: 10px; font-size: 11px; color: var(--text2);
+}
+.notes-remind-text { flex: 1; }
+.notes-remind-btn {
+  flex-shrink: 0; padding: 6px 12px; background: rgba(108,99,255,.12);
+  border: 1px solid rgba(108,99,255,.3); border-radius: 8px; color: var(--accent2);
+  font-size: 11px; font-weight: 700; cursor: pointer; font-family: var(--ff-body);
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+}
+.notes-remind-btn:active { transform: scale(.9); }
+.notes-remind-btn.enabled { background: rgba(0,229,160,.12); border-color: rgba(0,229,160,.3); color: var(--green); }
+
 /* ── DAILY QUESTS ── */
 .quest-panel { margin-bottom: 14px; }
 .quest-item {
