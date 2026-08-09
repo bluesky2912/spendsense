@@ -146,6 +146,8 @@ function toggleSavage() {
   savageMode = !savageMode;
   Storage.setSavageMode(savageMode);
   document.getElementById('savageToggle').classList.toggle('active', savageMode);
+  const emojiEl = document.getElementById('savageEmoji');
+  if (emojiEl) emojiEl.textContent = savageMode ? '😈' : '😇';
   update();
   showToast(
     savageMode ? '😈 Savage Mode: ON — no mercy.' : '😇 Savage Mode: OFF — boring.',
@@ -184,6 +186,8 @@ function clearAll() {
   document.getElementById('monthlyBudget').value = 20000;
   document.getElementById('weeklyBudget').value  = 5000;
   document.getElementById('savageToggle').classList.remove('active');
+  const savageEmojiEl = document.getElementById('savageEmoji');
+  if (savageEmojiEl) savageEmojiEl.textContent = '😇';
   const notesEl = document.getElementById('quickNotes');
   if (notesEl) notesEl.value = '';
 
@@ -1400,7 +1404,11 @@ function bootApp() {
   }
 
   /* Savage toggle */
-  if (savageMode) document.getElementById('savageToggle').classList.add('active');
+  if (savageMode) {
+    document.getElementById('savageToggle').classList.add('active');
+    const emojiEl = document.getElementById('savageEmoji');
+    if (emojiEl) emojiEl.textContent = '😈';
+  }
 
   /* Pre-fill budget inputs */
   document.getElementById('monthlyBudget').value = budget.monthly;
