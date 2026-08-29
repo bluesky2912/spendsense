@@ -1,10 +1,12 @@
 /* ============================================================
-   dashboard.js — SpendSense Premium AI
-   Hero amount, stat pills, budget ring, streak, insights ticker,
-   heatmap, spending forecast, anomaly alert.
+   dashboard.js — SpendSense 5-Second 3-Question Dashboard Engine
+   Answers:
+   1. How much did I spend?
+   2. Where did it go?
+   3. Am I doing okay?
    ============================================================ */
 
-/* ── Hero ── */
+/* ── Hero Update ── */
 function updateHero() {
   const greetEl = document.getElementById('heroGreeting');
   if (greetEl) {
@@ -14,46 +16,78 @@ function updateHero() {
 
   const monthly = getMonthlyTotal(expenses);
   const heroEl  = document.getElementById('heroAmount');
-  if (parseFloat(heroEl.dataset.val || '0') !== monthly) {
-    animateValue(heroEl, parseFloat(heroEl.dataset.val || '0'), monthly, 600, fmt);
+  if (heroEl) {
+    if (parseFloat(heroEl.dataset.val || '0') !== monthly) {
+      animateValue(heroEl, parseFloat(heroEl.dataset.val || '0'), monthly, 600, fmt);
+    }
+    heroEl.dataset.val = monthly;
   }
-  heroEl.dataset.val = monthly;
 
+  // Month-over-Month Delta
+  const deltaEl = document.getElementById('heroSpentDelta');
+  if (deltaEl) {
+    const now = new Date();
+    const prevMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevTotal = getMonthlyTotal(expenses, prevMonthDate);
+
+    if (prevTotal > 0 && monthly > 0) {
+      const diff = monthly - prevTotal;
+      const pct = Math.round((Math.abs(diff) / prevTotal) * 100);
+      if (diff < 0) {
+        deltaEl.textContent = `↓ ${fmt(Math.abs(diff))} less than last month (${pct}%)`;
+        deltaEl.className = 'hero-spent-delta good';
+      } else if (diff > 0) {
+        deltaEl.textContent = `↑ ${fmt(diff)} more than last month (+${pct}%)`;
+        deltaEl.className = 'hero-spent-delta bad';
+      } else {
+        deltaEl.textContent = `Same as last month`;
+        deltaEl.className = 'hero-spent-delta';
+      }
+    } else if (budget.monthly) {
+      const real = (monthly / budget.monthly) * 100;
+      deltaEl.textContent = `${Math.round(real)}% of ${fmt(budget.monthly)} budget`;
+      deltaEl.className = 'hero-spent-delta' + (real > 100 ? ' bad' : real > 80 ? ' warn' : ' good');
+    } else {
+      deltaEl.textContent = `${expenses.length} expense${expenses.length !== 1 ? 's' : ''} tracked`;
+      deltaEl.className = 'hero-spent-delta';
+    }
+  }
+
+  // Human Personality Commentary
+  const commentaryEl = document.getElementById('heroCommentary');
+  if (commentaryEl) {
+    if (typeof Personality !== 'undefined') {
+      commentaryEl.textContent = Personality.getHeroCommentary(expenses, budget, incomes);
+    } else {
+      commentaryEl.textContent = 'Keep logging to sharpen your financial pulse.';
+    }
+  }
+
+  // Ring Animation
   const real = budget.monthly ? (monthly / budget.monthly) * 100 : 0;
   const pct  = Math.min(real, 100);
-
-  // SVG ring: circumference = 2π×85 ≈ 534
   const ring   = document.getElementById('ringFill');
   const pctTxt = document.getElementById('ringPct');
-  ring.style.strokeDashoffset = 534 - (pct / 100) * 534;
-  pctTxt.textContent = Math.round(real) + '%';
+  if (ring && pctTxt) {
+    ring.style.strokeDashoffset = 534 - (pct / 100) * 534;
+    pctTxt.textContent = Math.round(real) + '%';
 
-  if      (real >= 100) ring.style.stroke = '#e5484d';
-  else if (real >= 80)  ring.style.stroke = '#f2994a';
-  else if (real >= 60)  ring.style.stroke = '#e8bf5a';
-  else                  ring.style.stroke = 'url(#ringGradient)';
+    if      (real >= 100) ring.style.stroke = '#e5484d';
+    else if (real >= 80)  ring.style.stroke = '#f2994a';
+    else if (real >= 60)  ring.style.stroke = '#e8bf5a';
+    else                  ring.style.stroke = 'url(#ringGradient)';
+  }
 
   const ringSvg = document.getElementById('heroRingSvg');
-  ringSvg.classList.remove('ring-danger', 'ring-safe');
-  if (expenses.length && budget.monthly) {
-    if (real >= 100)             ringSvg.classList.add('ring-danger');
-    else if (real > 0 && real < 40) ringSvg.classList.add('ring-safe');
+  if (ringSvg) {
+    ringSvg.classList.remove('ring-danger', 'ring-safe');
+    if (expenses.length && budget.monthly) {
+      if (real >= 100)                ringSvg.classList.add('ring-danger');
+      else if (real > 0 && real < 40) ringSvg.classList.add('ring-safe');
+    }
   }
 
-  const meta = document.getElementById('heroMeta');
-  if (!expenses.length) {
-    meta.textContent = 'Start adding expenses below';
-  } else if (real >= 100) {
-    meta.textContent = savageMode
-      ? `💀 ${fmt(monthly - budget.monthly)} over budget. You went FERAL.`
-      : `🚨 ${fmt(monthly - budget.monthly)} over your monthly budget`;
-  } else if (budget.monthly) {
-    meta.textContent = `${fmt(budget.monthly - monthly)} remaining of ${fmt(budget.monthly)} budget`;
-  } else {
-    meta.textContent = `${expenses.length} expense${expenses.length !== 1 ? 's' : ''} tracked`;
-  }
-
-  /* Cash flow line — only shows once income has been logged */
+  /* Cash flow line */
   const cashFlowEl = document.getElementById('cashFlowLine');
   if (cashFlowEl) {
     const monthlyIncome = getMonthlyIncome(incomes);
@@ -68,148 +102,210 @@ function updateHero() {
   }
 }
 
-/* ── Stat Pills ── */
-function updateStats() {
-  const weekly  = getWeeklyTotal(expenses);
-  const today   = getTodayTotal(expenses);
-  const top     = getTopCategory(expenses);
+/* ── 4-Pillar Pulse Status Strip ── */
+function updatePulseStrip() {
   const monthly = getMonthlyTotal(expenses);
-  const left    = budget.monthly ? Math.max(0, budget.monthly - monthly) : 0;
+  const now = new Date();
+  const dayOfMonth = now.getDate();
+  const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  const daysLeft = Math.max(1, daysInMonth - dayOfMonth);
 
-  const weeklyEl = document.getElementById('weeklyTotal');
-  animateValue(weeklyEl, parseFloat(weeklyEl.dataset.val || '0'), weekly, 600, fmt);
-  weeklyEl.dataset.val = weekly;
-
-  const todayEl = document.getElementById('todayTotal');
-  animateValue(todayEl, parseFloat(todayEl.dataset.val || '0'), today, 600, fmt);
-  todayEl.dataset.val = today;
-
-  document.getElementById('totalCount').textContent  = `${expenses.length} entries total`;
-
-  // Weekly delta
-  const weekEl = document.getElementById('weeklyDelta');
-  if (budget.weekly) {
-    const pct = Math.round((weekly / budget.weekly) * 100);
-    weekEl.textContent = `${pct}% of weekly budget`;
-    weekEl.className   = 'stat-pill-delta ' + (pct > 90 ? 'down' : pct > 60 ? '' : 'up');
-  } else {
-    weekEl.textContent = 'No weekly budget set';
-    weekEl.className   = 'stat-pill-delta';
+  // 1. Spending Trend / Pace
+  const projected = dayOfMonth > 0 ? Math.round((monthly / dayOfMonth) * daysInMonth) : 0;
+  const paceValEl = document.getElementById('pulseTrendVal');
+  const paceSubEl = document.getElementById('pulseTrendSub');
+  if (paceValEl && paceSubEl) {
+    if (!expenses.length) {
+      paceValEl.textContent = 'No Spend Yet';
+      paceSubEl.textContent = 'Day ' + dayOfMonth + ' of ' + daysInMonth;
+    } else if (budget.monthly && projected > budget.monthly) {
+      paceValEl.textContent = 'Elevated Pace';
+      paceValEl.style.color = 'var(--red)';
+      paceSubEl.textContent = `On track for ~${fmt(projected)}`;
+    } else {
+      paceValEl.textContent = 'On Track';
+      paceValEl.style.color = 'var(--green)';
+      paceSubEl.textContent = `Projected ~${fmt(projected)}`;
+    }
   }
 
-  // Top category
-  const topAmtEl = document.getElementById('topCatAmount');
-  if (top) {
-    document.getElementById('topCatIcon').textContent = CAT[top[0]]?.emoji || '🏆';
-    document.getElementById('topCat').textContent     = top[0];
-    animateValue(topAmtEl, parseFloat(topAmtEl.dataset.val || '0'), top[1], 600, v => fmt(v) + ' spent');
-    topAmtEl.dataset.val = top[1];
-  } else {
-    document.getElementById('topCatIcon').textContent = '🏆';
-    document.getElementById('topCat').textContent     = '—';
-    topAmtEl.textContent = '—';
-    topAmtEl.dataset.val = 0;
+  // 2. Top Category
+  const top = getTopCategory(expenses);
+  const topValEl = document.getElementById('pulseTopCatVal');
+  const topSubEl = document.getElementById('pulseTopCatSub');
+  const topIconEl = document.getElementById('pulseTopCatIcon');
+  if (topValEl && topSubEl) {
+    if (top) {
+      const topPct = monthly > 0 ? Math.round((top[1] / monthly) * 100) : 0;
+      topValEl.textContent = top[0];
+      topSubEl.textContent = `${fmt(top[1])} (${topPct}%)`;
+      if (topIconEl) topIconEl.textContent = CAT[top[0]]?.emoji || '🏆';
+    } else {
+      topValEl.textContent = '—';
+      topSubEl.textContent = 'No expenses';
+      if (topIconEl) topIconEl.textContent = '🏆';
+    }
   }
 
-  // Budget left
-  const leftEl = document.getElementById('budgetLeft');
-  if (budget.monthly) {
-    animateValue(leftEl, parseFloat(leftEl.dataset.val || '0'), left, 600, fmt);
-    leftEl.dataset.val = left;
-  } else {
-    leftEl.textContent = '—';
-    leftEl.dataset.val = 0;
+  // 3. Budget Progress
+  const budgetValEl = document.getElementById('pulseBudgetVal');
+  const budgetSubEl = document.getElementById('pulseBudgetSub');
+  if (budgetValEl && budgetSubEl) {
+    if (budget.monthly) {
+      const pct = Math.min(100, Math.round((monthly / budget.monthly) * 100));
+      const left = Math.max(0, budget.monthly - monthly);
+      budgetValEl.textContent = `${pct}% Used`;
+      budgetSubEl.textContent = `${fmt(left)} left (${daysLeft}d)`;
+    } else {
+      budgetValEl.textContent = 'No Budget';
+      budgetSubEl.textContent = 'Set limit in budget tab';
+    }
   }
-  const leftDelta = document.getElementById('budgetLeftDelta');
-  if (budget.monthly && monthly > 0) {
-    const now      = new Date();
-    const daysLeft = Math.ceil(
-      (new Date(now.getFullYear(), now.getMonth() + 1, 1) - now) / 86400000
-    );
-    leftDelta.textContent = `~${fmt(Math.round(left / Math.max(daysLeft, 1)))} per day left`;
-    leftDelta.className   = 'stat-pill-delta' + (left <= 0 ? ' down' : ' up');
-  } else {
-    leftDelta.textContent = budget.monthly ? 'Set a budget first' : 'No budget set';
-    leftDelta.className   = 'stat-pill-delta';
+
+  // 4. Safe-to-Spend
+  const safeValEl = document.getElementById('pulseSafeVal');
+  const safeSubEl = document.getElementById('pulseSafeSub');
+  if (safeValEl && safeSubEl) {
+    if (typeof Affordability !== 'undefined') {
+      const affordBreakdown = Affordability.calculate(0);
+      safeValEl.textContent = fmt(affordBreakdown.safeToSpend);
+      safeSubEl.textContent = `${fmt(Math.round(affordBreakdown.safeToSpend / daysLeft))}/day buffer`;
+    }
   }
+}
+
+/* ── Dashboard Highlight Story ── */
+function updateDashboardHighlightStory() {
+  const storyEl = document.getElementById('dashHighlightStoryText');
+  if (!storyEl) return;
+
+  if (typeof Stories !== 'undefined') {
+    const storiesList = Stories.generateStories();
+    if (storiesList.length > 0) {
+      const topStory = storiesList[0];
+      storyEl.innerHTML = `<strong>${escapeHtml(topStory.title)}</strong> ${escapeHtml(topStory.subtitle)} ${escapeHtml(topStory.detail || '')}`;
+      return;
+    }
+  }
+
+  if (!expenses.length) {
+    storyEl.textContent = 'Log your first few expenses to unlock smart spending stories and spike alerts.';
+  } else {
+    storyEl.textContent = `You've logged ${expenses.length} entries. Keep going to reveal category surges and weekend habits!`;
+  }
+}
+
+/* ── Quick Dashboard Affordability Check ── */
+function checkAffordFromDash() {
+  const amtInput = document.getElementById('dashAffordInputAmt');
+  const nameInput = document.getElementById('dashAffordInputName');
+  const amt = amtInput ? parseFloat(amtInput.value) || 0 : 0;
+  const name = nameInput ? nameInput.value.trim() : '';
+
+  if (typeof Affordability !== 'undefined') {
+    Affordability.showModal(amt > 0 ? amt : 8000, name || 'Proposed purchase');
+  }
+}
+
+/* ── Dedicated Tab Affordability Calculator ── */
+function renderTabAffordability() {
+  const amtInput = document.getElementById('tabAffordAmount');
+  const nameInput = document.getElementById('tabAffordName');
+  const container = document.getElementById('tabAffordResultSheet');
+  if (!container || typeof Affordability === 'undefined') return;
+
+  const amt = amtInput ? parseFloat(amtInput.value) || 0 : 0;
+  const name = nameInput ? nameInput.value.trim() : '';
+
+  if (amt <= 0) {
+    container.innerHTML = `
+      <div class="afford-empty-state">
+        <div class="afford-empty-icon">💡</div>
+        <div class="afford-empty-title">Enter a proposed amount above</div>
+        <div class="afford-empty-desc">SpendSense will calculate your exact cash buffer, upcoming bills, and savings goal impact in real time.</div>
+        <div class="afford-quick-samples">
+          <button type="button" class="afford-sample-btn" onclick="document.getElementById('tabAffordAmount').value=8000; document.getElementById('tabAffordName').value='Sony Headphones'; renderTabAffordability();">🎧 ₹8,000 Headphones</button>
+          <button type="button" class="afford-sample-btn" onclick="document.getElementById('tabAffordAmount').value=3200; document.getElementById('tabAffordName').value='Weekend Dinner'; renderTabAffordability();">🍔 ₹3,200 Dinner</button>
+          <button type="button" class="afford-sample-btn" onclick="document.getElementById('tabAffordAmount').value=45000; document.getElementById('tabAffordName').value='MacBook Air'; renderTabAffordability();">💻 ₹45,000 Laptop</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+
+  const result = Affordability.calculate(amt, name);
+  const verdictClass = `afford-verdict-${result.verdict}`;
+  const remColor = result.remainingAfterPurchase >= 0 ? 'var(--green)' : 'var(--red)';
+
+  container.innerHTML = `
+    <div class="afford-card ${verdictClass}">
+      <div class="afford-verdict-header">
+        <span class="afford-verdict-icon">${result.verdictIcon}</span>
+        <div>
+          <div class="afford-verdict-title">${result.verdictTitle}</div>
+          <div class="afford-verdict-sub">${result.verdictMessage}</div>
+        </div>
+      </div>
+
+      <div class="afford-breakdown">
+        <div class="afford-row">
+          <span class="afford-label">Current effective balance</span>
+          <span class="afford-val">${fmt(result.currentBalance)}</span>
+        </div>
+        <div class="afford-row">
+          <span class="afford-label">Upcoming expenses & obligations</span>
+          <span class="afford-val" style="color:var(--orange)">−${fmt(result.upcomingExpenses)}</span>
+        </div>
+        <div class="afford-row">
+          <span class="afford-label">Savings goal reserve</span>
+          <span class="afford-val" style="color:var(--accent)">−${fmt(result.savingsGoalAllocation)}</span>
+        </div>
+        <div class="afford-divider"></div>
+        <div class="afford-row afford-highlight">
+          <span class="afford-label">Safe-to-spend buffer</span>
+          <span class="afford-val" style="color:var(--green)">${fmt(result.safeToSpend)}</span>
+        </div>
+        <div class="afford-row">
+          <span class="afford-label">Proposed purchase (${escapeHtml(result.itemName)})</span>
+          <span class="afford-val" style="color:var(--text); font-weight:700">−${fmt(result.purchaseAmount)}</span>
+        </div>
+        <div class="afford-divider"></div>
+        <div class="afford-row afford-total-row">
+          <span class="afford-label">Remaining after purchase</span>
+          <span class="afford-val" style="color:${remColor}; font-size:16px; font-weight:800">
+            ${result.remainingAfterPurchase >= 0 ? '+' : '−'}${fmt(Math.abs(result.remainingAfterPurchase))}
+          </span>
+        </div>
+      </div>
+
+      <div class="afford-actions">
+        <button class="afford-action-btn primary" onclick="Affordability.logAsExpense(${result.purchaseAmount}, '${escapeHtml(result.itemName).replace(/'/g, "\\'")}', '${result.category}')">
+          <span>💸 Log as Expense</span>
+        </button>
+        <button class="afford-action-btn secondary" onclick="Affordability.createSavingsGoal(${result.purchaseAmount}, '${escapeHtml(result.itemName).replace(/'/g, "\\'")}')">
+          <span>🎯 Save for this (~${result.weeksToSave} wks)</span>
+        </button>
+      </div>
+    </div>
+  `;
 }
 
 /* ── Streak badge ── */
 function updateStreak() {
   const streak   = getSpendingStreak(expenses);
   const streakEl = document.getElementById('streakCount');
-  animateValue(streakEl, parseFloat(streakEl.dataset.val || '0'), streak, 500, v => String(Math.round(v)));
-  streakEl.dataset.val = streak;
-  document.getElementById('streakBadge').style.opacity = streak > 0 ? '1' : '0.4';
-}
-
-/* ── Insights Ticker ── */
-function updateInsights() {
-  const inner = document.getElementById('tickerInner');
-  if (!expenses.length) {
-    inner.innerHTML = '<span class="ticker-chip">Add expenses to unlock insights</span><span class="ticker-chip">Add expenses to unlock insights</span>';
-    return;
+  if (streakEl) {
+    animateValue(streakEl, parseFloat(streakEl.dataset.val || '0'), streak, 500, v => String(Math.round(v)));
+    streakEl.dataset.val = streak;
   }
-
-  const chips   = [];
-  const cats    = getCategoryBreakdown(expenses);
-  const sorted  = Object.entries(cats).sort((a, b) => b[1] - a[1]);
-  const monthly = getMonthlyTotal(expenses);
-  const avg     = getAvgDailySpend(expenses);
-
-  if (sorted[0]) {
-    const [cat, amt] = sorted[0];
-    chips.push(savageMode
-      ? `${CAT[cat]?.emoji} You blew ${fmt(amt)} on ${cat} this month. Classic.`
-      : `${CAT[cat]?.emoji} Top category: ${cat} — ${fmt(amt)} this month`);
-  }
-
-  const streak = getSpendingStreak(expenses);
-  if (streak >= 3) chips.push(savageMode
-    ? `🔥 ${streak}-day tracking streak. Consistent. Chaotically, but consistent.`
-    : `🔥 ${streak}-day tracking streak — keep it up!`);
-
-  const maxExp = getMaxExpense(expenses);
-  if (maxExp) chips.push(`💸 Biggest single expense: ${fmt(maxExp.amount)} — "${escapeHtml(maxExp.name)}"`);
-
-  if (avg > 0) chips.push(`📊 Average daily spend: ${fmt(Math.round(avg))}`);
-
-  // Mood insight — how do tagged spends feel this month?
-  const nowForMood = new Date();
-  const taggedThisMonth = expenses.filter(e =>
-    e.mood && parseDate(e.date).getMonth() === nowForMood.getMonth() && parseDate(e.date).getFullYear() === nowForMood.getFullYear()
-  );
-  if (taggedThisMonth.length >= 3) {
-    const regretCount = taggedThisMonth.filter(e => e.mood === 'regret').length;
-    const happyCount   = taggedThisMonth.filter(e => e.mood === 'happy').length;
-    const regretPct = Math.round((regretCount / taggedThisMonth.length) * 100);
-    const happyPct  = Math.round((happyCount  / taggedThisMonth.length) * 100);
-    if (regretPct >= 25) chips.push(`😔 ${regretPct}% of tagged spends this month were regrets — worth a second look`);
-    else if (happyPct >= 60) chips.push(`😊 ${happyPct}% of tagged spends this month felt worth it — nice`);
-  }
-
-  // Forecast insight
-  const now = new Date();
-  const day = now.getDate();
-  const dim = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  if (monthly > 0) chips.push(`📡 Projected month-end: ${fmt(Math.round(monthly / day * dim))}`);
-
-  if (budget.monthly && monthly > 0) {
-    const p = Math.round((monthly / budget.monthly) * 100);
-    if (p < 40) chips.push(savageMode
-      ? `👀 Only ${p}% of budget used. Plot twist: you ARE financially stable?`
-      : `✅ Great! Only ${p}% of monthly budget used so far`);
-  }
-
-  // Duplicate for seamless scroll loop
-  const html = [...chips, ...chips].map(c => `<span class="ticker-chip">${c}</span>`).join('');
-  inner.innerHTML = html;
-  inner.style.animationDuration = Math.max(15, chips.length * 6) + 's';
+  const badge = document.getElementById('streakBadge');
+  if (badge) badge.style.opacity = streak > 0 ? '1' : '0.4';
 }
 
 /* ── Heatmap (last 30 days) ── */
 function updateHeatmap() {
   const heatmap = document.getElementById('heatmap');
+  if (!heatmap) return;
   const data    = getLast30Days(expenses);
   const amounts = data.map(d => d.total);
   const max     = Math.max(...amounts, 1);
@@ -229,6 +325,7 @@ function updateHeatmap() {
 /* ── Spending Forecast ── */
 function updateForecast() {
   const fb = document.getElementById('forecastBar');
+  if (!fb) return;
   if (expenses.length < 3) { fb.style.display = 'none'; return; }
 
   const now        = new Date();
@@ -241,10 +338,12 @@ function updateForecast() {
   document.getElementById('forecastText').textContent = 'At current pace, you\'ll spend this month:';
 
   const fv = document.getElementById('forecastValue');
-  fv.textContent = fmt(projected);
-  if      (budget.monthly && projected > budget.monthly)       fv.style.color = 'var(--red)';
-  else if (budget.monthly && projected > budget.monthly * 0.8) fv.style.color = 'var(--orange)';
-  else                                                          fv.style.color = 'var(--yellow)';
+  if (fv) {
+    fv.textContent = fmt(projected);
+    if      (budget.monthly && projected > budget.monthly)       fv.style.color = 'var(--red)';
+    else if (budget.monthly && projected > budget.monthly * 0.8) fv.style.color = 'var(--orange)';
+    else                                                          fv.style.color = 'var(--yellow)';
+  }
 }
 
 /* ── Anomaly Alert ── */
@@ -254,6 +353,7 @@ function checkAnomaly() {
 
   const { expense: e, multiplier } = result;
   const el = document.getElementById('anomalyAlert');
+  if (!el) return;
   document.getElementById('anomalyText').textContent =
     `Unusually large expense: ${fmt(e.amount)} on "${escapeHtml(e.name)}" — that's ${multiplier}× your average spend`;
   el.classList.add('show');
@@ -263,6 +363,7 @@ function checkAnomaly() {
 /* ── Smart auto-detect category ── */
 function autoDetectCategory(val) {
   const hint = document.getElementById('autoDetectHint');
+  if (!hint) return;
   if (!val || val.length < 3) { hint.textContent = ''; return; }
   const cat = detectCategory(val);
   if (cat) {

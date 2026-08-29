@@ -86,6 +86,8 @@
       </div>
       <div class="header-right">
         <div class="header-group utility-group">
+          <button class="theme-btn" id="personalityBtn" onclick="showPersonalityModal()" title="Personality Mode">✨ <span id="personalityLabel">Adaptive</span></button>
+          <button class="theme-btn" onclick="MonthlyReport.showModal()" title="Monthly Financial Report">📑 <span class="hide-sm">Report</span></button>
           <button class="theme-btn" onclick="toggleTheme()">☀️ <span id="themeLabel">Light</span></button>
           <button class="theme-btn icon-btn" onclick="showShortcuts()" title="Keyboard shortcuts">⌨️</button>
           <button class="theme-btn icon-btn" onclick="showTrophyCase()" title="Trophy Case">🏆</button>
@@ -95,6 +97,8 @@
         <div class="header-more-wrap">
           <button class="theme-btn icon-btn more-btn" onclick="toggleHeaderMenu(event)" title="More">⋯</button>
           <div class="header-dropdown" id="headerDropdown">
+            <button onclick="showPersonalityModal(); closeHeaderMenu();">✨ Personality Mode</button>
+            <button onclick="MonthlyReport.showModal(); closeHeaderMenu();">📑 Monthly Report</button>
             <button onclick="toggleTheme(); closeHeaderMenu();">☀️ <span id="themeLabelMenu">Toggle Theme</span></button>
             <button onclick="showShortcuts(); closeHeaderMenu();">⌨️ Shortcuts</button>
             <button onclick="showTrophyCase(); closeHeaderMenu();">🏆 Trophy Case</button>
@@ -124,8 +128,9 @@
     <nav class="nav-tabs" id="navTabs">
       <span class="nav-indicator" id="navIndicator"></span>
       <button class="nav-tab active" onclick="switchTab('dashboard', this)"><span>📊</span> Dashboard</button>
+      <button class="nav-tab" onclick="switchTab('afford', this)"><span>💡</span> Can I Afford?</button>
       <button class="nav-tab" onclick="switchTab('ai', this)"><span>🧠</span> Coach</button>
-      <button class="nav-tab" onclick="switchTab('analytics', this)"><span>📈</span> Analytics</button>
+      <button class="nav-tab" onclick="switchTab('analytics', this)"><span>📈</span> Stories &amp; Analytics</button>
       <button class="nav-tab" onclick="switchTab('goals', this)"><span>🎯</span> Goals</button>
       <button class="nav-tab" onclick="switchTab('recurring', this)"><span>🔄</span> Recurring</button>
       <button class="nav-tab" onclick="switchTab('split', this)"><span>🤝</span> Split</button>
@@ -143,13 +148,16 @@
         <button class="nudge-dismiss" onclick="dismissNudge()" aria-label="Dismiss">×</button>
       </div>
 
-      <!-- HERO -->
+      <!-- HERO SECTION: Answers the 3 core questions in 5 seconds -->
       <div class="hero-section">
         <div class="hero-main">
           <div class="hero-greeting" id="heroGreeting">Good morning.</div>
-          <div class="hero-label">Total spent this month</div>
-          <div class="hero-amount" id="heroAmount">₹0</div>
-          <div class="hero-meta" id="heroMeta">Start adding expenses below</div>
+          <div class="hero-label">Spent this month</div>
+          <div class="hero-amount-row">
+            <div class="hero-amount" id="heroAmount">₹0</div>
+            <div class="hero-spent-delta" id="heroSpentDelta">—</div>
+          </div>
+          <div class="hero-commentary" id="heroCommentary">Looking steady. Keep logging to sharpen your financial pulse.</div>
           <div class="cash-flow-line" id="cashFlowLine" style="display:none"></div>
         </div>
         <div class="hero-rings">
@@ -169,64 +177,78 @@
         </div>
       </div>
 
-      <!-- FORECAST BAR -->
+      <!-- 4-PILLAR ESSENTIAL STATUS STRIP -->
+      <div class="pulse-strip">
+        <div class="pulse-card" onclick="switchTab('analytics')">
+          <div class="pulse-icon">📊</div>
+          <div class="pulse-content">
+            <div class="pulse-label">Spending Trend</div>
+            <div class="pulse-val" id="pulseTrendVal">On Track</div>
+            <div class="pulse-sub" id="pulseTrendSub">~₹0 / day pace</div>
+          </div>
+        </div>
+        <div class="pulse-card" onclick="switchTab('analytics')">
+          <div class="pulse-icon" id="pulseTopCatIcon">🍔</div>
+          <div class="pulse-content">
+            <div class="pulse-label">Top Category</div>
+            <div class="pulse-val" id="pulseTopCatVal">—</div>
+            <div class="pulse-sub" id="pulseTopCatSub">0% of total</div>
+          </div>
+        </div>
+        <div class="pulse-card">
+          <div class="pulse-icon">🎯</div>
+          <div class="pulse-content">
+            <div class="pulse-label">Budget Progress</div>
+            <div class="pulse-val" id="pulseBudgetVal">0% Used</div>
+            <div class="pulse-sub" id="pulseBudgetSub">₹20,000 left</div>
+          </div>
+        </div>
+        <div class="pulse-card" onclick="Affordability.showModal()">
+          <div class="pulse-icon">💰</div>
+          <div class="pulse-content">
+            <div class="pulse-label">Safe-to-Spend</div>
+            <div class="pulse-val" id="pulseSafeVal" style="color:var(--green)">₹0</div>
+            <div class="pulse-sub" id="pulseSafeSub">Buffer after bills &amp; goals</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HIGHLIGHTED STORY INSIGHT -->
+      <div class="dash-highlight-story" id="dashHighlightStory">
+        <div class="highlight-story-badge">🔥 KEY INSIGHT</div>
+        <div class="highlight-story-text" id="dashHighlightStoryText">Log your first few expenses to unlock smart spending stories and spike alerts.</div>
+        <button class="highlight-story-action" onclick="switchTab('analytics')">Explore Stories →</button>
+      </div>
+
+      <!-- INSTANT "CAN I AFFORD THIS?" BAR -->
+      <div class="dash-afford-bar">
+        <div class="afford-bar-left">
+          <span class="afford-bar-icon">💡</span>
+          <div class="afford-bar-text">
+            <strong>Can I afford this?</strong>
+            <span>Test any purchase against your real balance, bills, and goals.</span>
+          </div>
+        </div>
+        <div class="afford-bar-inputs">
+          <div class="afford-quick-input-wrap">
+            <span class="afford-quick-cur">₹</span>
+            <input type="number" id="dashAffordInputAmt" class="field-input afford-quick-input" placeholder="8000" inputmode="decimal" />
+          </div>
+          <input type="text" id="dashAffordInputName" class="field-input afford-quick-name" placeholder="e.g. Headphones" />
+          <button class="afford-quick-btn" onclick="checkAffordFromDash()">Check →</button>
+        </div>
+      </div>
+
+      <!-- FORECAST & ANOMALY BAR -->
       <div class="forecast-bar" id="forecastBar" style="display:none">
         <div class="forecast-icon">📡</div>
         <div class="forecast-text" id="forecastText">Calculating forecast…</div>
         <div class="forecast-value" id="forecastValue"></div>
       </div>
 
-      <!-- ANOMALY ALERT -->
       <div class="anomaly-alert" id="anomalyAlert">
         <div class="anomaly-icon">⚠️</div>
         <div id="anomalyText"></div>
-      </div>
-
-      <!-- STAT PILLS -->
-      <div class="stats-row">
-        <div class="stat-pill">
-          <div class="stat-pill-icon">📅</div>
-          <div class="stat-pill-body">
-            <div class="stat-pill-label">This Week</div>
-            <div class="stat-pill-value" id="weeklyTotal">₹0</div>
-            <div class="stat-pill-delta" id="weeklyDelta">—</div>
-          </div>
-        </div>
-        <div class="stat-pill">
-          <div class="stat-pill-icon" id="topCatIcon">🏆</div>
-          <div class="stat-pill-body">
-            <div class="stat-pill-label">Top Category</div>
-            <div class="stat-pill-value" id="topCat">—</div>
-            <div class="stat-pill-delta" id="topCatAmount">—</div>
-          </div>
-        </div>
-        <div class="stat-pill">
-          <div class="stat-pill-icon">⚡</div>
-          <div class="stat-pill-body">
-            <div class="stat-pill-label">Today</div>
-            <div class="stat-pill-value" id="todayTotal">₹0</div>
-            <div class="stat-pill-delta" id="totalCount">0 entries</div>
-          </div>
-        </div>
-        <div class="stat-pill">
-          <div class="stat-pill-icon">🎯</div>
-          <div class="stat-pill-body">
-            <div class="stat-pill-label">Budget Left</div>
-            <div class="stat-pill-value" id="budgetLeft">₹0</div>
-            <div class="stat-pill-delta" id="budgetLeftDelta">—</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- INSIGHTS TICKER -->
-      <div class="insights-ticker">
-        <div class="ticker-label">💡 Insights</div>
-        <div class="ticker-track">
-          <div class="ticker-inner" id="tickerInner">
-            <span class="ticker-chip">Add expenses to unlock insights</span>
-            <span class="ticker-chip">Add expenses to unlock insights</span>
-          </div>
-        </div>
       </div>
 
       <!-- DAILY QUESTS -->
@@ -464,6 +486,39 @@
     </div><!-- /tab-dashboard -->
 
     <!-- ══════════════════════════════════════
+         TAB: CAN I AFFORD THIS?
+    ══════════════════════════════════════ -->
+    <div id="tab-afford" style="display:none">
+      <div class="afford-tab-container">
+        <div class="afford-hero-header">
+          <div class="afford-badge">💡 DECISION ENGINE</div>
+          <h2 class="afford-page-title">Can I afford this?</h2>
+          <p class="afford-page-desc">Instant clarity on any purchase based on your live balance, upcoming obligations, and active savings goals.</p>
+        </div>
+
+        <div class="afford-input-card">
+          <div class="afford-inputs-grid">
+            <div class="form-field">
+              <label class="field-label" for="tabAffordAmount">Purchase Price (₹)</label>
+              <div class="amount-big-row" style="margin:0; background:var(--bg3); border-radius:12px; padding:6px 12px">
+                <span class="currency-big" style="font-size:24px">₹</span>
+                <input type="number" id="tabAffordAmount" class="amount-big-input" style="font-size:28px"
+                  placeholder="8000" min="0.01" step="0.01" inputmode="decimal" oninput="renderTabAffordability()" />
+              </div>
+            </div>
+            <div class="form-field">
+              <label class="field-label" for="tabAffordName">What are you buying?</label>
+              <input type="text" id="tabAffordName" class="field-input" style="font-size:15px; min-height:46px"
+                placeholder="e.g. Sony WH-1000XM5 headphones" oninput="renderTabAffordability()" />
+            </div>
+          </div>
+        </div>
+
+        <div id="tabAffordResultSheet"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════
          TAB: AI COACH
     ══════════════════════════════════════ -->
     <div id="tab-ai" style="display:none">
@@ -499,9 +554,29 @@
     </div>
 
     <!-- ══════════════════════════════════════
-         TAB: ANALYTICS
+         TAB: ANALYTICS & STORIES
     ══════════════════════════════════════ -->
     <div id="tab-analytics" style="display:none">
+      
+      <!-- MONTHLY REPORT PROMPT BANNER -->
+      <div class="report-banner-cta" onclick="MonthlyReport.showModal()">
+        <div class="report-banner-left">
+          <div class="report-banner-tag">MONTHLY FINANCIAL JOURNAL</div>
+          <div class="report-banner-title">Your money, decoded. 📑</div>
+          <div class="report-banner-sub">View your full monthly wins, biggest leaks, and high-res shareable report.</div>
+        </div>
+        <button class="report-banner-btn">Open Report →</button>
+      </div>
+
+      <!-- STORY-FIRST NARRATIVE SECTION ("Insight first. Visualization second") -->
+      <div class="stories-section-header">
+        <div>
+          <h2 class="panel-title" style="font-size:18px">📖 Financial Stories</h2>
+          <p style="font-size:12px; color:var(--text2)">Insights decoded in plain English, with visual breakdowns below.</p>
+        </div>
+      </div>
+      <div id="analyticsStoriesContainer" style="margin-bottom:18px"></div>
+
       <div class="analytics-grid">
 
         <!-- Smart Insights -->
@@ -805,6 +880,125 @@
     </div>
   </div>
 
+  <!-- Affordability Modal -->
+  <div class="modal-overlay" id="affordModal" onclick="if(event.target===this) Affordability.hideModal()">
+    <div class="modal-box afford-modal-box">
+      <div class="modal-title">
+        <span>💡 Can I Afford This?</span>
+        <button class="modal-close" onclick="Affordability.hideModal()">×</button>
+      </div>
+      <div class="afford-modal-body">
+        <div class="form-row" style="margin-bottom:12px">
+          <div class="form-field">
+            <label class="field-label">Purchase Price (₹)</label>
+            <div class="amount-big-row" style="margin:0; background:var(--bg3); border-radius:10px; padding:4px 10px">
+              <span class="currency-big" style="font-size:22px">₹</span>
+              <input type="number" id="affordAmount" class="amount-big-input" style="font-size:24px"
+                placeholder="8000" min="0.01" step="0.01" inputmode="decimal" oninput="Affordability.renderModal()" />
+            </div>
+          </div>
+          <div class="form-field">
+            <label class="field-label">What are you buying?</label>
+            <input type="text" id="affordName" class="field-input" style="min-height:42px"
+              placeholder="e.g. Headphones" oninput="Affordability.renderModal()" />
+          </div>
+        </div>
+        <div id="affordResultSheet"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Monthly Financial Report Modal ("Your money, decoded.") -->
+  <div class="modal-overlay" id="monthlyReportModal" onclick="if(event.target===this) MonthlyReport.hideModal()">
+    <div class="modal-box report-modal-box">
+      <div class="modal-title">
+        <span>📑 Monthly Financial Report</span>
+        <button class="modal-close" onclick="MonthlyReport.hideModal()">×</button>
+      </div>
+      <div id="monthlyReportBody"></div>
+    </div>
+  </div>
+
+  <!-- Personality Mode Modal -->
+  <div class="modal-overlay" id="personalityModal" onclick="if(event.target===this) hidePersonalityModal()">
+    <div class="modal-box" style="max-width:420px">
+      <div class="modal-title">
+        <span>✨ SpendSense Personality</span>
+        <button class="modal-close" onclick="hidePersonalityModal()">×</button>
+      </div>
+      <div style="font-size:12px; color:var(--text2); margin-bottom:14px">
+        Choose how SpendSense communicates with you throughout the app.
+      </div>
+      <div class="personality-list" id="personalityList"></div>
+    </div>
+  </div>
+
+  <!-- ══ MOBILE QUICK ADD BOTTOM SHEET ══ -->
+  <div class="quick-add-backdrop" id="quickAddBackdrop" onclick="closeQuickAddSheet()"></div>
+  <div class="quick-add-sheet" id="quickAddSheet">
+    <div class="sheet-drag-handle"></div>
+    <div class="sheet-header">
+      <div class="sheet-title">Quick Log</div>
+      <button class="sheet-close" onclick="closeQuickAddSheet()">×</button>
+    </div>
+    <div class="sheet-body">
+      <!-- Big Amount Input -->
+      <div class="sheet-amount-wrap">
+        <span class="sheet-currency">₹</span>
+        <input type="number" id="quickSheetAmount" class="sheet-amount-input"
+          placeholder="450" min="0.01" step="0.01" inputmode="decimal" />
+      </div>
+
+      <!-- Description Input -->
+      <div class="sheet-field">
+        <input type="text" id="quickSheetName" class="field-input sheet-desc-input"
+          placeholder="What was it? (e.g. Swiggy, Uber, Groceries)" maxlength="80" autocomplete="off" />
+      </div>
+
+      <!-- Thumb-friendly Fast Category Chips -->
+      <div class="sheet-cat-label">Select Category</div>
+      <div class="sheet-cat-grid">
+        <button type="button" class="sheet-cat-btn active" data-cat="Food" onclick="selectQuickSheetCat(this)">🍔 Food</button>
+        <button type="button" class="sheet-cat-btn" data-cat="Transport" onclick="selectQuickSheetCat(this)">🚕 Travel</button>
+        <button type="button" class="sheet-cat-btn" data-cat="Shopping" onclick="selectQuickSheetCat(this)">🛍 Shopping</button>
+        <button type="button" class="sheet-cat-btn" data-cat="Bills" onclick="selectQuickSheetCat(this)">💡 Bills</button>
+        <button type="button" class="sheet-cat-btn" data-cat="Entertainment" onclick="selectQuickSheetCat(this)">🎬 Fun</button>
+        <button type="button" class="sheet-cat-btn" data-cat="Health" onclick="selectQuickSheetCat(this)">💊 Health</button>
+      </div>
+
+      <input type="hidden" id="quickSheetCategory" value="Food" />
+
+      <!-- Big Thumb-friendly Add Button -->
+      <button class="sheet-add-btn" onclick="submitQuickSheet()">
+        <span>Add Expense</span>
+        <span>→</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ MOBILE BOTTOM NAVIGATION BAR ══ -->
+  <nav class="mobile-bottom-nav">
+    <button class="mob-nav-btn active" id="mobNavDash" onclick="switchTab('dashboard')">
+      <span class="mob-nav-icon">📊</span>
+      <span class="mob-nav-label">Dashboard</span>
+    </button>
+    <button class="mob-nav-btn" id="mobNavAfford" onclick="switchTab('afford')">
+      <span class="mob-nav-icon">💡</span>
+      <span class="mob-nav-label">Afford?</span>
+    </button>
+    <button class="mob-nav-btn mob-nav-add-btn" onclick="openQuickAddSheet()" aria-label="Quick Add Expense">
+      <span class="mob-add-plus">+</span>
+    </button>
+    <button class="mob-nav-btn" id="mobNavStories" onclick="switchTab('analytics')">
+      <span class="mob-nav-icon">📈</span>
+      <span class="mob-nav-label">Stories</span>
+    </button>
+    <button class="mob-nav-btn" id="mobNavGoals" onclick="switchTab('goals')">
+      <span class="mob-nav-icon">🎯</span>
+      <span class="mob-nav-label">Goals</span>
+    </button>
+  </nav>
+
   <!-- Toast + Confetti -->
   <div class="toast-container" id="toastContainer"></div>
   <canvas id="confettiCanvas" class="confetti-canvas"></canvas>
@@ -833,7 +1027,11 @@
 
   <script src="config.js"></script>
   <script src="storage.js"></script>
+  <script src="personality.js"></script>
   <script src="utils.js"></script>
+  <script src="affordability.js"></script>
+  <script src="stories.js"></script>
+  <script src="report.js"></script>
   <script src="dashboard.js"></script>
   <script src="charts.js"></script>
   <script src="expenseList.js"></script>

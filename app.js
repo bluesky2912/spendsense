@@ -100,8 +100,10 @@ function addExpense() {
   showSuccessCheck('.add-btn');
 
   /* Toast */
-  const msg = savageMode ? getSavageLine(category, amount) : '✅ Expense added!';
-  showToast(msg, savageMode ? 'savage' : 'success');
+  const msg = typeof Personality !== 'undefined'
+    ? Personality.getExpenseToast(name, category, amount)
+    : (savageMode ? getSavageLine(category, amount) : '✅ Expense added!');
+  showToast(msg, (savageMode || msg.includes('💀')) ? 'savage' : 'success');
 
   if (possibleDup) {
     const newId = exp.id;
@@ -353,26 +355,63 @@ document.addEventListener('click', e => {
 ══════════════════════════════════════ */
 function switchTab(tab, btn) {
   /* Hide all tab panels */
-  ['dashboard', 'ai', 'analytics', 'goals', 'recurring', 'split'].forEach(t => {
-    document.getElementById('tab-' + t).style.display = 'none';
+  ['dashboard', 'afford', 'ai', 'analytics', 'goals', 'recurring', 'split'].forEach(t => {
+    const el = document.getElementById('tab-' + t);
+    if (el) el.style.display = 'none';
   });
 
   /* Deactivate all nav buttons */
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
 
+  /* Sync mobile bottom nav buttons */
+  const mobMap = {
+    dashboard: 'mobNavDash',
+    afford: 'mobNavAfford',
+    analytics: 'mobNavStories',
+    goals: 'mobNavGoals',
+  };
+  document.querySelectorAll('.mob-nav-btn').forEach(b => b.classList.remove('active'));
+  if (mobMap[tab] && document.getElementById(mobMap[tab])) {
+    document.getElementById(mobMap[tab]).classList.add('active');
+  }
+
   /* Show selected tab, with a springy entrance */
   const panel = document.getElementById('tab-' + tab);
-  panel.style.display = 'block';
-  panel.classList.remove('tab-anim');
-  void panel.offsetWidth; // force reflow so the animation restarts
-  panel.classList.add('tab-anim');
+  if (panel) {
+    panel.style.display = 'block';
+    panel.classList.remove('tab-anim');
+    void panel.offsetWidth; // force reflow so the animation restarts
+    panel.classList.add('tab-anim');
+  }
 
-  if (btn) { btn.classList.add('active'); moveNavIndicator(btn); }
+  if (btn) {
+    btn.classList.add('active');
+    moveNavIndicator(btn);
+  } else {
+    const navBtn = Array.from(document.querySelectorAll('.nav-tab')).find(b =>
+      b.getAttribute('onclick') && b.getAttribute('onclick').includes(`'${tab}'`)
+    );
+    if (navBtn) {
+      navBtn.classList.add('active');
+      moveNavIndicator(navBtn);
+    }
+  }
   currentTab = tab;
+
+  if (tab === 'dashboard') {
+    updateHero();
+    updatePulseStrip();
+    updateDashboardHighlightStory();
+  }
+
+  if (tab === 'afford') {
+    renderTabAffordability();
+  }
 
   /* Lazy-render analytics widgets only when tab is visible */
   if (tab === 'analytics') {
     if (typeof markDailyAction === 'function') markDailyAction('visitedAnalytics');
+    if (typeof Stories !== 'undefined') Stories.renderStoryCards('analyticsStoriesContainer');
     renderSmartInsights();
     updatePaymentBreakdown();
     updateMoM();
@@ -388,6 +427,124 @@ function switchTab(tab, btn) {
   if (tab === 'goals')     renderGoals();
   if (tab === 'recurring') { renderRecurring(); renderRecurringSuggestions(); }
   if (tab === 'split')     renderSplitTab();
+}
+
+/* ══════════════════════════════════════
+   MOBILE QUICK-ADD BOTTOM SHEET
+══════════════════════════════════════ */
+function openQuickAddSheet() {
+  const sheet = document.getElementById('quickAddSheet');
+  const backdrop = document.getElementById('quickAddBackdrop');
+  if (!sheet || !backdrop) return;
+
+  sheet.classList.add('open');
+  backdrop.classList.add('open');
+
+  const amtInput = document.getElementById('quickSheetAmount');
+  if (amtInput) {
+    amtInput.value = '';
+    setTimeout(() => amtInput.focus(), 150);
+  }
+}
+
+function closeQuickAddSheet() {
+  const sheet = document.getElementById('quickAddSheet');
+  const backdrop = document.getElementById('quickAddBackdrop');
+  if (sheet) sheet.classList.remove('open');
+  if (backdrop) backdrop.classList.remove('open');
+}
+
+function selectQuickSheetCat(btn) {
+  document.querySelectorAll('.sheet-cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const catInput = document.getElementById('quickSheetCategory');
+  if (catInput) catInput.value = btn.dataset.cat;
+}
+
+function submitQuickSheet() {
+  const amtInput = document.getElementById('quickSheetAmount');
+  const nameInput = document.getElementById('quickSheetName');
+  const catInput = document.getElementById('quickSheetCategory');
+
+  const amount = parseFloat(amtInput ? amtInput.value : '0');
+  const rawName = nameInput ? nameInput.value.trim() : '';
+  const category = catInput ? catInput.value : 'Food';
+  const name = rawName || (CAT[category] ? `${CAT[category].emoji} ${category}` : category);
+
+  if (!amount || amount <= 0) {
+    showToast('❌ Please enter a valid amount', 'error');
+    if (amtInput) shakeInput('quickSheetAmount');
+    return;
+  }
+
+  const exp = {
+    id: genId(),
+    name,
+    amount,
+    category,
+    date: todayStr(),
+  };
+
+  expenses.push(exp);
+  Storage.saveExpenses(expenses);
+
+  if (amtInput) amtInput.value = '';
+  if (nameInput) nameInput.value = '';
+
+  closeQuickAddSheet();
+  addXP(5);
+  update();
+  checkAchievements();
+  checkAnomaly();
+
+  const toastMsg = typeof Personality !== 'undefined'
+    ? Personality.getExpenseToast(name, category, amount)
+    : `✅ ${fmt(amount)} logged!`;
+  showToast(toastMsg, (savageMode || toastMsg.includes('💀')) ? 'savage' : 'success');
+
+  if (expenses.length === 1 || expenses.length % 10 === 0) fireConfetti();
+}
+
+/* ══════════════════════════════════════
+   PERSONALITY MODAL
+══════════════════════════════════════ */
+function showPersonalityModal() {
+  const modal = document.getElementById('personalityModal');
+  const listEl = document.getElementById('personalityList');
+  if (!modal || !listEl || typeof PERSONALITY_MODES === 'undefined') return;
+
+  const currentMode = typeof Personality !== 'undefined' ? Personality.getMode() : 'adaptive';
+
+  listEl.innerHTML = Object.values(PERSONALITY_MODES).map(m => `
+    <div class="personality-option ${m.id === currentMode ? 'active' : ''}" onclick="selectPersonalityMode('${m.id}')">
+      <span class="personality-opt-emoji">${m.emoji}</span>
+      <div class="personality-opt-body">
+        <div class="personality-opt-title">${m.name}</div>
+        <div class="personality-opt-desc">${m.desc}</div>
+      </div>
+      <span class="personality-opt-check">${m.id === currentMode ? '✓' : ''}</span>
+    </div>
+  `).join('');
+
+  modal.classList.add('show');
+}
+
+function hidePersonalityModal() {
+  const modal = document.getElementById('personalityModal');
+  if (modal) modal.classList.remove('show');
+}
+
+function selectPersonalityMode(modeId) {
+  if (typeof Personality !== 'undefined') {
+    Personality.setMode(modeId);
+    const label = document.getElementById('personalityLabel');
+    if (label && PERSONALITY_MODES[modeId]) {
+      label.textContent = PERSONALITY_MODES[modeId].name.split(' ')[0];
+    }
+  }
+  hidePersonalityModal();
+  updateHero();
+  showToast(`✨ Personality set to "${PERSONALITY_MODES[modeId]?.name || modeId}"`, 'success');
 }
 
 /* ══════════════════════════════════════
@@ -1404,9 +1561,9 @@ window.addEventListener('appinstalled', () => {
 ══════════════════════════════════════ */
 function update() {
   updateHero();
-  updateStats();
+  if (typeof updatePulseStrip === 'function') updatePulseStrip();
+  if (typeof updateDashboardHighlightStory === 'function') updateDashboardHighlightStory();
   updateStreak();
-  updateInsights();
   updateHeatmap();
   updateForecast();
   renderCharts();
@@ -1415,8 +1572,13 @@ function update() {
   renderQuests();
   renderBudgetSuggestion();
 
+  if (currentTab === 'afford' && typeof renderTabAffordability === 'function') {
+    renderTabAffordability();
+  }
+
   /* Only re-render analytics widgets if that tab is currently visible */
   if (currentTab === 'analytics') {
+    if (typeof Stories !== 'undefined') Stories.renderStoryCards('analyticsStoriesContainer');
     renderSmartInsights();
     updatePaymentBreakdown();
     updateMoM();
@@ -1446,6 +1608,15 @@ function bootApp() {
   xp            = Storage.getXP();
   incomes       = Storage.getIncomes();
   settlements   = Storage.getSettlements();
+
+  /* Initialize personality mode label */
+  if (typeof Personality !== 'undefined') {
+    const curMode = Personality.getMode();
+    const label = document.getElementById('personalityLabel');
+    if (label && PERSONALITY_MODES[curMode]) {
+      label.textContent = PERSONALITY_MODES[curMode].name.split(' ')[0];
+    }
+  }
 
   /* Apply theme */
   if (lightMode) {

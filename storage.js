@@ -48,6 +48,10 @@ const Storage = {
   getSavageMode()      { return localStorage.getItem('ss_savage') === 'true'; },
   setSavageMode(mode)  { localStorage.setItem('ss_savage', String(mode)); },
 
+  /* Personality mode */
+  getPersonalityMode()     { return localStorage.getItem('ss_personality_mode') || 'adaptive'; },
+  setPersonalityMode(mode) { localStorage.setItem('ss_personality_mode', mode); },
+
   /* Achievements */
   getUnlocked()    { return this.get('ss_unlocked') || []; },
   saveUnlocked(arr){ this.set('ss_unlocked', arr); },
