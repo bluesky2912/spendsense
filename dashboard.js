@@ -6,15 +6,18 @@
 
 /* ── Hero ── */
 function updateHero() {
+  const greetEl = document.getElementById('heroGreeting');
+  if (greetEl) {
+    const h = new Date().getHours();
+    greetEl.textContent = h < 12 ? 'Good morning.' : h < 17 ? 'Good afternoon.' : 'Good evening.';
+  }
+
   const monthly = getMonthlyTotal(expenses);
   const heroEl  = document.getElementById('heroAmount');
   if (parseFloat(heroEl.dataset.val || '0') !== monthly) {
-    scrambleText(heroEl, fmt(monthly), 850);
+    animateValue(heroEl, parseFloat(heroEl.dataset.val || '0'), monthly, 600, fmt);
   }
   heroEl.dataset.val = monthly;
-
-  const marqueeEl = document.querySelector('.hero-marquee');
-  if (marqueeEl) marqueeEl.classList.toggle('is-empty', expenses.length === 0);
 
   const real = budget.monthly ? (monthly / budget.monthly) * 100 : 0;
   const pct  = Math.min(real, 100);
@@ -25,10 +28,10 @@ function updateHero() {
   ring.style.strokeDashoffset = 534 - (pct / 100) * 534;
   pctTxt.textContent = Math.round(real) + '%';
 
-  if      (real >= 100) ring.style.stroke = '#ff3860';
-  else if (real >= 80)  ring.style.stroke = '#ff8c42';
-  else if (real >= 60)  ring.style.stroke = '#ffd166';
-  else                  ring.style.stroke = '#6c63ff';
+  if      (real >= 100) ring.style.stroke = '#e5484d';
+  else if (real >= 80)  ring.style.stroke = '#f2994a';
+  else if (real >= 60)  ring.style.stroke = '#e8bf5a';
+  else                  ring.style.stroke = 'url(#ringGradient)';
 
   const ringSvg = document.getElementById('heroRingSvg');
   ringSvg.classList.remove('ring-danger', 'ring-safe');

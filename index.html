@@ -8,14 +8,14 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="SpendSense" />
   <meta name="mobile-web-app-capable" content="yes" />
-  <meta name="description" content="Track expenses, income, budgets, and savings goals with an AI coach and gamified daily tracking." />
+  <meta name="description" content="Track expenses, income, budgets, and savings goals — with a spending coach and gentle daily habits built in." />
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="icon-192.png" />
-  <title>SpendSense — AI-Powered</title>
+  <title>SpendSense</title>
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E💸%3C/text%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Clash+Display:wght@400;500;600;700&family=Cabinet+Grotesk:wght@400;500;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -77,11 +77,10 @@
     <header class="header">
       <div class="logo">
         <div class="logo-mark">
-          <span>💸</span>
-          <div class="logo-pulse"></div>
+          <img src="icon-192.png" alt="SpendSense" class="logo-img" />
         </div>
         <div class="logo-text">
-          <h1>Spend<em>Sense</em> <span class="ai-label">AI</span></h1>
+          <h1>Spend<em>Sense</em></h1>
           <p class="logo-sub">your money, unfiltered</p>
         </div>
       </div>
@@ -125,7 +124,7 @@
     <nav class="nav-tabs" id="navTabs">
       <span class="nav-indicator" id="navIndicator"></span>
       <button class="nav-tab active" onclick="switchTab('dashboard', this)"><span>📊</span> Dashboard</button>
-      <button class="nav-tab" onclick="switchTab('ai', this)"><span>🧠</span> AI Coach</button>
+      <button class="nav-tab" onclick="switchTab('ai', this)"><span>🧠</span> Coach</button>
       <button class="nav-tab" onclick="switchTab('analytics', this)"><span>📈</span> Analytics</button>
       <button class="nav-tab" onclick="switchTab('goals', this)"><span>🎯</span> Goals</button>
       <button class="nav-tab" onclick="switchTab('recurring', this)"><span>🔄</span> Recurring</button>
@@ -146,20 +145,21 @@
 
       <!-- HERO -->
       <div class="hero-section">
-        <div class="hero-marquee" aria-hidden="true">
-          <div class="hero-marquee-track">
-            <span>SPEND SMART</span><span>TRACK EVERY RUPEE</span><span>BUDGET LIKE A BOSS</span>
-            <span>SPEND SMART</span><span>TRACK EVERY RUPEE</span><span>BUDGET LIKE A BOSS</span>
-          </div>
-        </div>
         <div class="hero-main">
-          <div class="hero-label">Total Spent This Month</div>
+          <div class="hero-greeting" id="heroGreeting">Good morning.</div>
+          <div class="hero-label">Total spent this month</div>
           <div class="hero-amount" id="heroAmount">₹0</div>
           <div class="hero-meta" id="heroMeta">Start adding expenses below</div>
           <div class="cash-flow-line" id="cashFlowLine" style="display:none"></div>
         </div>
         <div class="hero-rings">
           <svg class="ring-svg" id="heroRingSvg" viewBox="0 0 200 200">
+            <defs>
+              <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="var(--accent)" />
+                <stop offset="100%" stop-color="var(--accent2)" />
+              </linearGradient>
+            </defs>
             <circle class="ring-bg"   cx="100" cy="100" r="85" />
             <circle class="ring-fill" id="ringFill" cx="100" cy="100" r="85"
               stroke-dasharray="534" stroke-dashoffset="534" />
@@ -469,13 +469,12 @@
     <div id="tab-ai" style="display:none">
       <div class="ai-coach-panel">
         <div class="ai-coach-header">
-          <span style="font-size:24px">🧠</span>
+          <span style="font-size:22px">🧠</span>
           <div>
-            <div class="panel-title" style="font-size:17px">AI Spending Coach</div>
+            <div class="panel-title" style="font-size:17px">Coach</div>
             <div style="font-size:11px; color:var(--text2)">Personalised insights from your real spending data</div>
           </div>
           <button class="theme-btn icon-btn" onclick="clearChat()" title="Clear chat" style="margin-right:6px">🗑️</button>
-          <div class="ai-badge">AI</div>
         </div>
         <div class="ai-quick-btns">
           <button class="ai-quick-btn" onclick="askCoach('Where am I overspending?')">🔍 Where am I overspending?</button>
@@ -487,8 +486,7 @@
         </div>
         <div class="ai-messages" id="aiMessages">
           <div class="ai-msg coach" style="color:var(--text3); font-size:12px">
-            Hi! I'm your AI spending coach. Ask me anything about your expenses and I'll give you personalised insights.
-            Your data stays private — I only use it to answer your question.
+            Ask me anything about your spending — where it's going, what to cut, whether you're on track. I'll answer from your real data, and it stays on your device.
           </div>
         </div>
         <div class="ai-input-row">

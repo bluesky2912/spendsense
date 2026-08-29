@@ -85,7 +85,7 @@ TOTAL TRACKED:
 }
 
 /* ── System prompt ── */
-const SYSTEM_PROMPT = `You are a friendly, sharp, and practical AI spending coach embedded in an Indian personal finance app called SpendSense.
+const SYSTEM_PROMPT_NORMAL = `You are a friendly, sharp, and practical AI spending coach embedded in an Indian personal finance app called SpendSense.
 
 Your job: give concise, personalised, actionable financial advice based on the user's real spending data.
 
@@ -98,6 +98,23 @@ Guidelines:
 - Never lecture or moralize — just give useful insight
 - If data is sparse, say so kindly and give general advice
 - Avoid generic disclaimers like "consult a financial advisor"`;
+
+const SYSTEM_PROMPT_SAVAGE = `You are a blunt, funny, no-filter financial roast-coach embedded in an Indian personal finance app called SpendSense. The user has switched on "Savage Mode," which means they explicitly want brutal honesty over encouragement.
+
+Your job: give genuinely useful, accurate financial advice based on the user's real spending data — but deliver it with sharp, funny, roasting commentary. Mock bad habits, celebrate good ones sarcastically, and don't soften the truth.
+
+Guidelines:
+- Keep answers to 2–5 sentences unless listing multiple points
+- Use Indian context: ₹, Swiggy, Zomato, Flipkart, Ola, IRCTC, UPI etc.
+- Be savage and funny, but the underlying advice must still be genuinely correct and useful — roast the behavior, not the person, and never be cruel about things like debt, income level, or circumstances outside their control
+- Use "- " bullet points when listing 3+ distinct items (they render as a real list)
+- Use **bold** around key numbers or the single most important takeaway, sparingly
+- No corporate disclaimers, no "consult a financial advisor" — just the roast and the real advice
+- If data is sparse, roast them for not tracking anything yet, then give general advice`;
+
+function getSystemPrompt() {
+  return (typeof savageMode !== 'undefined' && savageMode) ? SYSTEM_PROMPT_SAVAGE : SYSTEM_PROMPT_NORMAL;
+}
 
 /* ── Lightweight, safe markdown → HTML (bold + bullet lists only) ── */
 function renderMarkdownLite(text) {
@@ -128,7 +145,7 @@ function animateCoachReply(bubble) {
   const blocks = bubble.querySelectorAll('p, li');
   blocks.forEach((b, i) => {
     b.style.opacity = '0';
-    b.style.animation = `coachReveal .4s ${i * 90}ms cubic-bezier(.34,1.56,.64,1) forwards`;
+    b.style.animation = `coachReveal .35s ${i * 70}ms cubic-bezier(.2,.8,.2,1) forwards`;
   });
 }
 
@@ -171,8 +188,7 @@ function clearChat() {
   Storage.saveChatHistory(chatHistory);
   document.getElementById('aiMessages').innerHTML = `
     <div class="ai-msg coach" style="color:var(--text3); font-size:12px">
-      Hi! I'm your AI spending coach. Ask me anything about your expenses and I'll give you personalised insights.
-      Your data stays private — I only use it to answer your question.
+      Ask me anything about your spending — where it's going, what to cut, whether you're on track. I'll answer from your real data, and it stays on your device.
     </div>`;
   showToast('🗑️ Chat cleared', 'default');
 }
@@ -219,11 +235,11 @@ async function askCoach(question) {
         'Authorization': `Bearer ${GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
+        model: 'openai/gpt-oss-20b',
         max_tokens: 600,
         temperature: 0.7,
         messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'system', content: getSystemPrompt() },
           { role: 'user',   content: `Here is my spending data:\n\n${context}\n\nMy question: ${question}` },
         ],
       }),

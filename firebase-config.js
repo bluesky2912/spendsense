@@ -13,4 +13,4 @@ const firebaseConfig = {
   storageBucket: "spendsense-1f244.firebasestorage.app",
   messagingSenderId: "563948824252",
   appId: "1:563948824252:web:dba255a53cda32c22412b9",
-};
+}; 

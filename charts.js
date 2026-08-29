@@ -9,20 +9,23 @@ let pieChart      = null;
 let trendChart    = null;
 let cashFlowChart = null;
 
-const CHART_THEME = {
-  tooltip: {
-    backgroundColor: '#10101e',
-    borderColor:     'rgba(108,99,255,0.3)',
-    borderWidth:     1,
-    titleColor:      '#6e6e90',
-    bodyColor:       '#f0f0ff',
-    padding:         12,
-    cornerRadius:    10,
-  },
-  gridColor: 'rgba(255,255,255,0.04)',
-  tickColor: '#6e6e90',
-  tickFont:  { family: 'JetBrains Mono', size: 11 },
-};
+function getChartTheme() {
+  const isLight = document.body.classList.contains('light');
+  return {
+    tooltip: {
+      backgroundColor: isLight ? '#ffffff' : '#171717',
+      borderColor:     'rgba(52,196,150,0.3)',
+      borderWidth:     1,
+      titleColor:      isLight ? '#6b6b6b' : '#8a8a8a',
+      bodyColor:       isLight ? '#171717' : '#f5f5f5',
+      padding:         12,
+      cornerRadius:    10,
+    },
+    gridColor: isLight ? 'rgba(0,0,0,0.06)' : 'rgba(255,255,255,0.05)',
+    tickColor: isLight ? '#6b6b6b' : '#8a8a8a',
+    tickFont:  { family: 'JetBrains Mono', size: 11 },
+  };
+}
 
 /* ── Bar Chart — last 7 days ── */
 function renderBarChart() {
@@ -34,8 +37,8 @@ function renderBarChart() {
   if (barChart) { barChart.destroy(); barChart = null; }
 
   const gradient = ctx.createLinearGradient(0, 0, 0, 300);
-  gradient.addColorStop(0, 'rgba(108,99,255,0.8)');
-  gradient.addColorStop(1, 'rgba(108,99,255,0.1)');
+  gradient.addColorStop(0, 'rgba(52,196,150,0.8)');
+  gradient.addColorStop(1, 'rgba(52,196,150,0.1)');
 
   barChart = new Chart(ctx, {
     type: 'bar',
@@ -49,9 +52,9 @@ function renderBarChart() {
           return d.total > 0 ? gradient : 'rgba(255,255,255,0.03)';
         }),
         borderColor: daily.map(d => {
-          if (d.date === today)         return '#00e5a0';
-          if (d.total === max && max > 0) return '#ff6b9d';
-          return d.total > 0 ? 'rgba(108,99,255,0.8)' : 'rgba(255,255,255,0.06)';
+          if (d.date === today)         return '#34c496';
+          if (d.total === max && max > 0) return '#ff6b81';
+          return d.total > 0 ? 'rgba(52,196,150,0.8)' : 'rgba(255,255,255,0.06)';
         }),
         borderWidth:   2,
         borderRadius:  8,
@@ -65,7 +68,7 @@ function renderBarChart() {
       plugins: {
         legend:  { display: false },
         tooltip: {
-          ...CHART_THEME.tooltip,
+          ...getChartTheme().tooltip,
           callbacks: {
             label: ctx => {
               const val = fmt(ctx.raw);
@@ -76,16 +79,16 @@ function renderBarChart() {
       },
       scales: {
         x: {
-          grid:   { color: CHART_THEME.gridColor, drawBorder: false },
-          ticks:  { color: CHART_THEME.tickColor, font: CHART_THEME.tickFont },
+          grid:   { color: getChartTheme().gridColor, drawBorder: false },
+          ticks:  { color: getChartTheme().tickColor, font: getChartTheme().tickFont },
           border: { display: false },
         },
         y: {
-          grid:   { color: CHART_THEME.gridColor, drawBorder: false },
+          grid:   { color: getChartTheme().gridColor, drawBorder: false },
           border: { display: false },
           ticks:  {
-            color:    CHART_THEME.tickColor,
-            font:     CHART_THEME.tickFont,
+            color:    getChartTheme().tickColor,
+            font:     getChartTheme().tickFont,
             callback: v => v === 0 ? '₹0' : fmtShort(v),
           },
         },
@@ -126,9 +129,9 @@ function renderPieChart() {
       labels:   entries.map(([k]) => `${CAT[k]?.emoji || ''} ${k}`),
       datasets: [{
         data:                 entries.map(([, v]) => v),
-        backgroundColor:      entries.map(([k]) => (CAT[k]?.color || '#94a3b8') + '33'),
+        backgroundColor:      entries.map(([k]) => (CAT[k]?.color || '#94a3b8') + 'cc'),
         borderColor:          entries.map(([k]) =>  CAT[k]?.color || '#94a3b8'),
-        hoverBackgroundColor: entries.map(([k]) => (CAT[k]?.color || '#94a3b8') + '66'),
+        hoverBackgroundColor: entries.map(([k]) => (CAT[k]?.color || '#94a3b8')),
         borderWidth: 2,
         hoverOffset: 12,
       }],
@@ -142,16 +145,18 @@ function renderPieChart() {
           display:  true,
           position: 'right',
           labels: {
-            color:    '#9090b0',
+            color:    getChartTheme().tickColor,
             font:     { family: 'JetBrains Mono', size: 10 },
             boxWidth: 10,
             padding:  12,
             generateLabels: chart => {
               const ds = chart.data.datasets[0];
+              const labelColor = getChartTheme().tickColor;
               return chart.data.labels.map((label, i) => ({
                 text:        `${label}  ${Math.round((ds.data[i] / total) * 100)}%`,
                 fillStyle:   ds.borderColor[i],
                 strokeStyle: ds.borderColor[i],
+                fontColor:   labelColor,
                 hidden:      false,
                 index:       i,
               }));
@@ -159,7 +164,7 @@ function renderPieChart() {
           },
         },
         tooltip: {
-          ...CHART_THEME.tooltip,
+          ...getChartTheme().tooltip,
           callbacks: {
             label: ctx => ` ${fmt(ctx.raw)}  (${Math.round((ctx.raw / total) * 100)}%)`,
           },
@@ -190,10 +195,10 @@ function renderTrendChart() {
       datasets: [{
         label:           'Monthly Spend',
         data:            monthlyTotals,
-        borderColor:     '#6c63ff',
-        backgroundColor: 'rgba(108,99,255,0.1)',
+        borderColor:     '#34c496',
+        backgroundColor: 'rgba(52,196,150,0.1)',
         borderWidth:     2,
-        pointBackgroundColor: '#6c63ff',
+        pointBackgroundColor: '#34c496',
         pointRadius:     5,
         tension:         0.3,
         fill:            true,
@@ -205,22 +210,22 @@ function renderTrendChart() {
       plugins: {
         legend:  { display: false },
         tooltip: {
-          ...CHART_THEME.tooltip,
+          ...getChartTheme().tooltip,
           callbacks: { label: ctx => ` ${fmt(ctx.raw)}` },
         },
       },
       scales: {
         x: {
-          grid:   { color: CHART_THEME.gridColor, drawBorder: false },
-          ticks:  { color: CHART_THEME.tickColor, font: CHART_THEME.tickFont },
+          grid:   { color: getChartTheme().gridColor, drawBorder: false },
+          ticks:  { color: getChartTheme().tickColor, font: getChartTheme().tickFont },
           border: { display: false },
         },
         y: {
-          grid:   { color: CHART_THEME.gridColor, drawBorder: false },
+          grid:   { color: getChartTheme().gridColor, drawBorder: false },
           border: { display: false },
           ticks:  {
-            color:    CHART_THEME.tickColor,
-            font:     CHART_THEME.tickFont,
+            color:    getChartTheme().tickColor,
+            font:     getChartTheme().tickFont,
             callback: v => fmtShort(v),
           },
         },
@@ -251,8 +256,8 @@ function renderCashFlowChart() {
     data: {
       labels: months,
       datasets: [
-        { label: 'Income',   data: incData, backgroundColor: 'rgba(0,229,160,0.7)',  borderRadius: 6 },
-        { label: 'Expenses', data: expData, backgroundColor: 'rgba(255,56,96,0.6)',  borderRadius: 6 },
+        { label: 'Income',   data: incData, backgroundColor: 'rgba(52,196,150,0.75)', borderRadius: 6 },
+        { label: 'Expenses', data: expData, backgroundColor: 'rgba(229,72,77,0.65)',  borderRadius: 6 },
       ],
     },
     options: {
@@ -262,23 +267,23 @@ function renderCashFlowChart() {
       plugins: {
         legend: {
           display: true, position: 'top',
-          labels: { color: '#9090b0', font: { family: 'JetBrains Mono', size: 10 }, boxWidth: 10, padding: 10 },
+          labels: { color: getChartTheme().tickColor, font: { family: 'JetBrains Mono', size: 10 }, boxWidth: 10, padding: 10 },
         },
         tooltip: {
-          ...CHART_THEME.tooltip,
+          ...getChartTheme().tooltip,
           callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.raw)}` },
         },
       },
       scales: {
         x: {
-          grid:   { color: CHART_THEME.gridColor, drawBorder: false },
-          ticks:  { color: CHART_THEME.tickColor, font: CHART_THEME.tickFont },
+          grid:   { color: getChartTheme().gridColor, drawBorder: false },
+          ticks:  { color: getChartTheme().tickColor, font: getChartTheme().tickFont },
           border: { display: false },
         },
         y: {
-          grid:   { color: CHART_THEME.gridColor, drawBorder: false },
+          grid:   { color: getChartTheme().gridColor, drawBorder: false },
           border: { display: false },
-          ticks:  { color: CHART_THEME.tickColor, font: CHART_THEME.tickFont, callback: v => fmtShort(v) },
+          ticks:  { color: getChartTheme().tickColor, font: getChartTheme().tickFont, callback: v => fmtShort(v) },
         },
       },
     },

@@ -77,7 +77,10 @@ const Storage = {
   saveQuestClaims(o) { this.set('ss_quest_claims', o); },
 
   /* Theme */
-  getTheme()       { return this.get('ss_theme') || false; },
+  getTheme() {
+    const v = this.get('ss_theme');
+    return v === null || v === undefined ? true : v; // light is the default, primary experience
+  },
   saveTheme(light) { this.set('ss_theme', light); },
 
   /* Nuke everything */

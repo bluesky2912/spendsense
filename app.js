@@ -97,10 +97,10 @@ function addExpense() {
   resetPaymentSelector();
 
   addXP(5);
-  fireCoinBurst();
+  showSuccessCheck('.add-btn');
 
   /* Toast */
-  const msg = savageMode ? getSavageLine(category) : '✅ Expense added!';
+  const msg = savageMode ? getSavageLine(category, amount) : '✅ Expense added!';
   showToast(msg, savageMode ? 'savage' : 'success');
 
   if (possibleDup) {
@@ -146,6 +146,7 @@ function toggleSavage() {
   savageMode = !savageMode;
   Storage.setSavageMode(savageMode);
   document.getElementById('savageToggle').classList.toggle('active', savageMode);
+  document.body.classList.toggle('savage-mode', savageMode);
   const emojiEl = document.getElementById('savageEmoji');
   if (emojiEl) emojiEl.textContent = savageMode ? '😈' : '😇';
   update();
@@ -186,6 +187,7 @@ function clearAll() {
   document.getElementById('monthlyBudget').value = 20000;
   document.getElementById('weeklyBudget').value  = 5000;
   document.getElementById('savageToggle').classList.remove('active');
+  document.body.classList.remove('savage-mode');
   const savageEmojiEl = document.getElementById('savageEmoji');
   if (savageEmojiEl) savageEmojiEl.textContent = '😇';
   const notesEl = document.getElementById('quickNotes');
@@ -443,6 +445,9 @@ function toggleTheme() {
     btn.childNodes[0].textContent = '☀️ ';
     label.textContent = 'Light';
   }
+
+  if (typeof renderCharts === 'function') renderCharts();
+  if (typeof renderCashFlowChart === 'function' && currentTab === 'analytics') renderCashFlowChart();
 }
 
 /* ══════════════════════════════════════
@@ -561,7 +566,7 @@ function fireConfetti() {
   canvas.width  = window.innerWidth;
   canvas.height = window.innerHeight;
 
-  const COLORS = ['#6c63ff', '#a78bfa', '#00e5a0', '#ff6b9d', '#ffd166', '#ff8c42'];
+  const COLORS = ['#34c496', '#2a9d78', '#e8bf5a', '#d98c7a'];
 
   const particles = Array.from({ length: 120 }, () => ({
     x:    Math.random() * canvas.width,
@@ -673,10 +678,7 @@ function initRipple() {
    for a sense of depth. Skips entirely for reduced-motion users.
 ══════════════════════════════════════ */
 function initOrbMotion() {
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    document.querySelectorAll('.orb-blob animate').forEach(a => a.remove());
-    return;
-  }
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const orbs = Array.from(document.querySelectorAll('.orb'));
   if (!orbs.length) return;
 
@@ -689,19 +691,18 @@ function initOrbMotion() {
   }
 
   function loop() {
-    t  += 0.006;
-    cx += (mx - cx) * 0.04;
-    cy += (my - cy) * 0.04;
+    t  += 0.0025; // slow, calm drift — not a rave
+    cx += (mx - cx) * 0.02;
+    cy += (my - cy) * 0.02;
     const dx = (cx - window.innerWidth  / 2) / window.innerWidth;
     const dy = (cy - window.innerHeight / 2) / window.innerHeight;
-    const scrollDrift = window.scrollY * 0.05;
+    const scrollDrift = window.scrollY * 0.03;
 
     orbs.forEach((orb, i) => {
-      const depth = (i + 1) * 16;
-      const fx    = Math.sin(t + i * 2)       * 18;
-      const fy    = Math.cos(t * 0.8 + i * 2) * 14;
-      const scale = 1 + Math.sin(t + i) * 0.04;
-      orb.style.transform = `translate(${dx * depth + fx}px, ${dy * depth + fy + scrollDrift}px) scale(${scale})`;
+      const depth = (i + 1) * 8;
+      const fx    = Math.sin(t + i * 2)       * 10;
+      const fy    = Math.cos(t * 0.8 + i * 2) * 8;
+      orb.style.transform = `translate(${dx * depth + fx}px, ${dy * depth + fy + scrollDrift}px)`;
     });
     requestAnimationFrame(loop);
   }
@@ -758,13 +759,17 @@ function initTiltCards() {
       const r  = card.getBoundingClientRect();
       const px = (e.clientX - r.left) / r.width;
       const py = (e.clientY - r.top)  / r.height;
-      const rotateY = (px - 0.5) * 8;
-      const rotateX = (0.5 - py) * 8;
-      card.style.transform = `perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-      card.style.setProperty('--mx', (px * 100) + '%');
-      card.style.setProperty('--my', (py * 100) + '%');
+      const rotateY = (px - 0.5) * 5;
+      const rotateX = (0.5 - py) * 5;
+      const shadowX = (px - 0.5) * -16;
+      const shadowY = (py - 0.5) * -16;
+      card.style.transform = `perspective(900px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateZ(4px)`;
+      card.style.boxShadow = `${shadowX}px ${16 + shadowY}px 32px rgba(0,0,0,.22)`;
     });
-    card.addEventListener('mouseleave', () => { card.style.transform = ''; });
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = '';
+      card.style.boxShadow = '';
+    });
   });
 }
 
@@ -845,7 +850,7 @@ function initParticleField() {
         const a = particles[i], b = particles[j];
         const d = Math.hypot(a.x - b.x, a.y - b.y);
         if (d < LINK_DIST) {
-          ctx.strokeStyle = `rgba(108,99,255,${(1 - d / LINK_DIST) * 0.16})`;
+          ctx.strokeStyle = `rgba(52,196,150,${(1 - d / LINK_DIST) * 0.16})`;
           ctx.beginPath();
           ctx.moveTo(a.x, a.y);
           ctx.lineTo(b.x, b.y);
@@ -854,7 +859,7 @@ function initParticleField() {
       }
     }
 
-    ctx.fillStyle = 'rgba(167,139,250,0.55)';
+    ctx.fillStyle = 'rgba(42,157,120,0.55)';
     particles.forEach(p => {
       ctx.beginPath();
       ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
@@ -890,6 +895,51 @@ function initScrollReveal() {
     el.classList.add('reveal-pending');
     el.dataset.revealDelay = Math.min(i * 55, 480);
     io.observe(el);
+  });
+}
+
+/* ══════════════════════════════════════
+   SUCCESS CHECK — a small, quiet confirmation with a satisfying
+   hand-drawn checkmark, not a burst of particles.
+══════════════════════════════════════ */
+function showSuccessCheck(nearSelector) {
+  const anchor = document.querySelector(nearSelector || '.add-btn');
+  if (!anchor) return;
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const r = anchor.getBoundingClientRect();
+  const check = document.createElement('div');
+  check.className = 'success-check';
+  check.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20"><path d="M4 12l5 5L20 6" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  check.style.left = (r.right - 32) + 'px';
+  check.style.top  = (r.top + r.height / 2 - 10) + 'px';
+  document.body.appendChild(check);
+  setTimeout(() => check.remove(), 900);
+}
+
+/* ══════════════════════════════════════
+   PAGE-LOAD CHOREOGRAPHY — a deliberate cascade for the first paint,
+   not everything fading in at once. Elements reveal in a specific
+   order: header, nav, greeting, balance, budget, stats, insights.
+══════════════════════════════════════ */
+function initPageLoadChoreography() {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  const steps = [
+    { selector: '.header',                                   delay: 0   },
+    { selector: '.nav-tabs',                                  delay: 90  },
+    { selector: '.hero-greeting, .hero-label',                delay: 170 },
+    { selector: '.hero-amount, .hero-meta, .cash-flow-line',  delay: 250 },
+    { selector: '.hero-rings',                                delay: 300 },
+    { selector: '.forecast-bar, .stats-row',                  delay: 380 },
+    { selector: '.insights-ticker',                           delay: 470 },
+  ];
+
+  steps.forEach(({ selector, delay }) => {
+    document.querySelectorAll(selector).forEach(el => {
+      el.classList.add('load-in-pending');
+      setTimeout(() => el.classList.add('load-in'), delay);
+    });
   });
 }
 
@@ -1114,7 +1164,7 @@ function addIncome() {
   document.getElementById('incAmount').value = '';
 
   addXP(5);
-  fireCoinBurst();
+  showSuccessCheck('.income-quick-add .save-budget-btn');
   update();
   renderIncomeList();
   checkAchievements();
@@ -1406,6 +1456,7 @@ function bootApp() {
   /* Savage toggle */
   if (savageMode) {
     document.getElementById('savageToggle').classList.add('active');
+    document.body.classList.add('savage-mode');
     const emojiEl = document.getElementById('savageEmoji');
     if (emojiEl) emojiEl.textContent = '😈';
   }
@@ -1447,18 +1498,23 @@ function bootApp() {
   if (typeof loadChatHistory === 'function') loadChatHistory();
   initQuickNotes();
 
-  /* Fun stuff: magnetic buttons, ripple feedback, ambient orb motion */
+  /* Rich, alive motion: 3D tilt, ambient orbs + particle field, liquid
+     cursor trail, magnetic buttons, ripples, and a staged reveal
+     cascade — a distinctive feel, not a flat template. */
+  initScrollReveal();
+  initTiltCards();
+  initOrbMotion();
+  initParticleField();
+  initCursorFX();
   initMagneticButtons();
   initRipple();
-  initOrbMotion();
-  initCursorFX();
-  initTiltCards();
-  initParticleField();
-  initScrollReveal();
   moveNavIndicator(document.querySelector('.nav-tab.active'));
 
-  /* Curtain-wipe the intro loader away now that everything's rendered */
-  setTimeout(dismissIntro, 450);
+  /* Curtain-wipe the intro loader away, then cascade the dashboard in */
+  setTimeout(() => {
+    dismissIntro();
+    initPageLoadChoreography();
+  }, 450);
 }
 
 /* ══════════════════════════════════════

@@ -6,33 +6,33 @@
 
 /* ── Category definitions ── */
 const CAT = {
-  Food:          { emoji: '🍔', color: '#f97316', bg: 'rgba(249,115,22,0.15)' },
-  Transport:     { emoji: '🚗', color: '#3b82f6', bg: 'rgba(59,130,246,0.15)' },
-  Shopping:      { emoji: '🛍', color: '#a855f7', bg: 'rgba(168,85,247,0.15)' },
-  Entertainment: { emoji: '🎬', color: '#ec4899', bg: 'rgba(236,72,153,0.15)' },
-  Health:        { emoji: '💊', color: '#22d3a5', bg: 'rgba(34,211,165,0.15)' },
-  Bills:         { emoji: '💡', color: '#fbbf24', bg: 'rgba(251,191,36,0.15)' },
-  Education:     { emoji: '📚', color: '#60a5fa', bg: 'rgba(96,165,250,0.15)' },
-  Travel:        { emoji: '✈️', color: '#34d399', bg: 'rgba(52,211,153,0.15)' },
-  Random:        { emoji: '🎲', color: '#f43f5e', bg: 'rgba(244,63,94,0.15)'  },
-  Other:         { emoji: '📌', color: '#94a3b8', bg: 'rgba(148,163,184,0.15)'},
+  Food:          { emoji: '🍔', color: '#c1825a', bg: 'rgba(193,130,90,0.14)' },
+  Transport:     { emoji: '🚗', color: '#6b8caf', bg: 'rgba(107,140,175,0.14)' },
+  Shopping:      { emoji: '🛍', color: '#9b7ba8', bg: 'rgba(155,123,168,0.14)' },
+  Entertainment: { emoji: '🎬', color: '#b8809a', bg: 'rgba(184,128,154,0.14)' },
+  Health:        { emoji: '💊', color: '#4a9b82', bg: 'rgba(74,155,130,0.14)'  },
+  Bills:         { emoji: '💡', color: '#c4a24e', bg: 'rgba(196,162,78,0.14)' },
+  Education:     { emoji: '📚', color: '#7a94b8', bg: 'rgba(122,148,184,0.14)' },
+  Travel:        { emoji: '✈️', color: '#5aab8a', bg: 'rgba(90,171,138,0.14)' },
+  Random:        { emoji: '🎲', color: '#b17b70', bg: 'rgba(177,123,112,0.14)' },
+  Other:         { emoji: '📌', color: '#8f8f95', bg: 'rgba(143,143,149,0.14)' },
 };
 
 /* ── Payment methods ── */
 const PAYMENT_METHODS = {
-  Cash: { emoji: '💵', color: '#00e5a0' },
-  Card: { emoji: '💳', color: '#6c63ff' },
-  UPI:  { emoji: '📲', color: '#3b82f6' },
+  Cash: { emoji: '💵', color: '#4a9b82' },
+  Card: { emoji: '💳', color: '#7a94b8' },
+  UPI:  { emoji: '📲', color: '#9b7ba8' },
 };
 
 /* ── Income sources ── */
 const INCOME_SOURCES = {
-  Salary:     { emoji: '💼', color: '#00e5a0' },
-  Freelance:  { emoji: '💻', color: '#6c63ff' },
-  Investment: { emoji: '📈', color: '#3b82f6' },
-  Gift:       { emoji: '🎁', color: '#ec4899' },
-  Refund:     { emoji: '↩️', color: '#fbbf24' },
-  Other:      { emoji: '💵', color: '#94a3b8' },
+  Salary:     { emoji: '💼', color: '#4a9b82' },
+  Freelance:  { emoji: '💻', color: '#7a94b8' },
+  Investment: { emoji: '📈', color: '#5aab8a' },
+  Gift:       { emoji: '🎁', color: '#b8809a' },
+  Refund:     { emoji: '↩️', color: '#c4a24e' },
+  Other:      { emoji: '💵', color: '#8f8f95' },
 };
 
 /* ── Smart category keyword map ── */
@@ -111,9 +111,18 @@ const SAVAGE_LINES = {
   ],
 };
 
-function getSavageLine(category) {
-  const lines = SAVAGE_LINES[category] || SAVAGE_LINES.default;
-  return lines[Math.floor(Math.random() * lines.length)];
+function getSavageLine(category, amount) {
+  const templates = SAVAGE_LINES[category] || SAVAGE_LINES.default;
+  const base = templates[Math.floor(Math.random() * templates.length)];
+
+  const amt = Math.round(amount || 0);
+  let tag = '';
+  if (amt >= 5000)      tag = ` ₹${amt.toLocaleString('en-IN')}?! Screenshot this for your therapist.`;
+  else if (amt >= 2000) tag = ` ₹${amt.toLocaleString('en-IN')} in one shot — bold move.`;
+  else if (amt >= 500)  tag = ` That's ₹${amt.toLocaleString('en-IN')} you'll "forget" you spent by Friday.`;
+  else if (amt > 0 && amt < 100) tag = ` Only ₹${amt}, but we're still watching. 👀`;
+
+  return base + tag;
 }
 
 /* ── Level / XP progression ──

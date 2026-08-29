@@ -327,8 +327,8 @@ function downloadRecapImage() {
   const ctx = canvas.getContext('2d');
 
   const bg = ctx.createLinearGradient(0, 0, W, H);
-  bg.addColorStop(0, '#0e0e1c');
-  bg.addColorStop(1, '#1a1440');
+  bg.addColorStop(0, '#111111');
+  bg.addColorStop(1, '#171717');
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
 
@@ -338,19 +338,19 @@ function downloadRecapImage() {
     ctx.fillStyle = g;
     ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
   };
-  glow(90, 90, 260, 'rgba(108,99,255,0.35)');
-  glow(W - 70, H - 110, 240, 'rgba(0,229,160,0.25)');
+  glow(90, 90, 260, 'rgba(52,196,150,0.18)');
+  glow(W - 70, H - 110, 240, 'rgba(52,196,150,0.12)');
 
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#9090b0';
+  ctx.fillStyle = '#8a8a8a';
   ctx.font = '600 22px sans-serif';
   ctx.fillText('SPENDSENSE · WEEKLY RECAP', W / 2, 100);
 
-  ctx.fillStyle = '#f0f0ff';
-  ctx.font = '800 88px sans-serif';
+  ctx.fillStyle = '#f5f5f5';
+  ctx.font = '700 88px sans-serif';
   ctx.fillText(fmt(data.total), W / 2, 260);
 
-  ctx.fillStyle = '#a78bfa';
+  ctx.fillStyle = '#34c496';
   ctx.font = '500 26px sans-serif';
   const deltaText = data.delta === null ? 'First week tracked'
     : data.delta > 0 ? `▲ ${data.delta}% vs last week`
@@ -366,11 +366,11 @@ function downloadRecapImage() {
   let y = 440;
   stats.forEach(([label, val]) => {
     ctx.textAlign = 'left';
-    ctx.fillStyle = '#6e6e90';
+    ctx.fillStyle = '#8a8a8a';
     ctx.font = '500 24px sans-serif';
     ctx.fillText(label.toUpperCase(), 80, y);
     ctx.textAlign = 'right';
-    ctx.fillStyle = '#f0f0ff';
+    ctx.fillStyle = '#f5f5f5';
     ctx.font = '700 28px sans-serif';
     ctx.fillText(val, W - 80, y);
     ctx.strokeStyle = 'rgba(255,255,255,0.08)';
@@ -379,7 +379,7 @@ function downloadRecapImage() {
   });
 
   ctx.textAlign = 'center';
-  ctx.fillStyle = '#6e6e90';
+  ctx.fillStyle = '#8a8a8a';
   ctx.font = '500 20px sans-serif';
   ctx.fillText('💸 SpendSense', W / 2, H - 60);
 

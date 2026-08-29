@@ -63,8 +63,8 @@ function buildExpenseItem(e, avg = 0) {
     e.isRecurring ? '<span class="expense-badge badge-recur">🔄 recurring</span>' : '',
     e.splitWith   ? `<span class="expense-badge badge-split">🔀 split w/ ${escapeHtml(e.splitWith)}</span>` : '',
     isAnomalous   ? '<span class="expense-badge badge-anomaly">⚠️ large</span>' : '',
-    e.mood        ? `<span class="expense-badge badge-mood">${moodEmoji[e.mood]}</span>` : '',
-    e.paymentMethod ? `<span class="expense-badge badge-payment">${paymentEmoji[e.paymentMethod]} ${e.paymentMethod}</span>` : '',
+    e.mood        ? `<span class="expense-badge badge-mood">${moodEmoji[e.mood] || ''}</span>` : '',
+    e.paymentMethod ? `<span class="expense-badge badge-payment">${paymentEmoji[e.paymentMethod] || ''} ${e.paymentMethod}</span>` : '',
   ].filter(Boolean).join('');
 
   const cb = bulkMode
@@ -74,11 +74,11 @@ function buildExpenseItem(e, avg = 0) {
   return `
     <div class="expense-item${isAnomalous ? ' anomaly' : ''}${e.splitWith ? ' split-item' : ''}${selectedIds.has(e.id) ? ' selected' : ''}" id="exp_${e.id}">
       ${cb}
-      <div class="cat-badge" style="background:${cat.bg}">${cat.emoji}</div>
+      <div class="cat-badge" style="background:${cat.bg}; border-color:${cat.color}44">${cat.emoji}</div>
       <div class="expense-info">
         <div class="expense-name">${escapeHtml(e.name)}</div>
         <div class="expense-meta">
-          <span class="expense-cat-tag" style="background:${cat.color}22; color:${cat.color}">${escapeHtml(e.category)}</span>
+          <span class="expense-cat-tag" style="background:${cat.color}20; color:${cat.color}">${escapeHtml(e.category)}</span>
           <span>${dateStr}</span>
           ${badges}
         </div>
